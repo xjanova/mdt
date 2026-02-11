@@ -1,59 +1,229 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MDT ประตูไม้ - ระบบ ERP
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+ระบบ ERP สำหรับบริษัทประตูไม้ — พัฒนาด้วย Laravel 12, Tailwind CSS 4, Vite
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ติดตั้งบน Ubuntu (Quick Start)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### วิธีที่ 1: คำสั่งเดียว (แนะนำ)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+sudo apt update && sudo apt install -y git curl
+git clone https://github.com/xjanova/mdt.git
+cd mdt
+chmod +x *.sh
+./quick-install.sh
+```
 
-## Learning Laravel
+### วิธีที่ 2: Interactive Install (เลือก MySQL/SQLite ได้)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+git clone https://github.com/xjanova/mdt.git
+cd mdt
+chmod +x *.sh
+./install.sh
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## ติดตั้งบน Ubuntu Server (Production)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 1. อัพเดทระบบ & ติดตั้ง Dependencies
 
-### Premium Partners
+```bash
+sudo apt update && sudo apt upgrade -y
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# PHP 8.2+
+sudo apt install -y php php-cli php-fpm php-mbstring php-xml php-zip \
+  php-curl php-bcmath php-tokenizer php-mysql php-sqlite3 php-gd unzip git curl
 
-## Contributing
+# Composer
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Node.js 20 LTS
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
 
-## Code of Conduct
+# Nginx
+sudo apt install -y nginx
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# MySQL (ถ้าใช้)
+sudo apt install -y mysql-server
+```
 
-## Security Vulnerabilities
+### 2. Clone & ติดตั้ง
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+cd /var/www
+sudo git clone https://github.com/xjanova/mdt.git
+sudo chown -R $USER:www-data mdt
+cd mdt
+chmod +x *.sh
+./install.sh
+```
+
+### 3. ตั้งค่า Nginx
+
+```bash
+sudo nano /etc/nginx/sites-available/mdt
+```
+
+ใส่:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /var/www/mdt/public;
+    index index.php;
+
+    charset utf-8;
+    client_max_body_size 20M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+```
+
+เปิดใช้งาน:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/mdt /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### 4. ตั้งค่า MySQL (ถ้าใช้)
+
+```bash
+sudo mysql -e "CREATE DATABASE mdt_erp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+sudo mysql -e "CREATE USER 'mdt_user'@'localhost' IDENTIFIED BY 'your-password';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON mdt_erp.* TO 'mdt_user'@'localhost';"
+sudo mysql -e "FLUSH PRIVILEGES;"
+```
+
+แก้ไข `.env`:
+
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=mdt_erp
+DB_USERNAME=mdt_user
+DB_PASSWORD=your-password
+```
+
+จากนั้น:
+
+```bash
+php artisan migrate --seed
+```
+
+### 5. SSL (Let's Encrypt)
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+---
+
+## Deploy (อัพเดท)
+
+```bash
+cd /var/www/mdt
+./deploy.sh
+```
+
+หรือแบบเร็ว:
+
+```bash
+./quick-deploy.sh
+```
+
+หรือสั่งผ่าน SSH:
+
+```bash
+ssh user@server 'cd /var/www/mdt && git pull && ./deploy.sh'
+```
+
+---
+
+## คำสั่งที่มีประโยชน์
+
+| คำสั่ง | คำอธิบาย |
+|--------|----------|
+| `./install.sh` | ติดตั้งแบบ interactive |
+| `./quick-install.sh` | ติดตั้งแบบเร็ว (SQLite) |
+| `./deploy.sh` | Deploy เต็มรูปแบบ |
+| `./deploy.sh --dry-run` | จำลอง deploy (ไม่ทำจริง) |
+| `./deploy.sh --branch=dev` | Deploy จาก branch ที่ระบุ |
+| `./quick-deploy.sh` | Deploy แบบเร็ว |
+| `./clear-cache.sh` | ล้าง cache ทั้งหมด |
+| `./fix-permissions.sh` | แก้ไขสิทธิ์ไฟล์ |
+| `./fix-permissions.sh www-data` | แก้ไขสิทธิ์ + เปลี่ยน owner |
+| `./run-migrations.sh` | จัดการ migration (7 ตัวเลือก) |
+| `./rollback.sh` | กู้คืนจาก backup |
+| `./fix-line-endings.sh` | แก้ CRLF (Windows) -> LF (Linux) |
+| `./setup-automation.sh` | ตั้งค่า git hooks & GitHub templates |
+| `php artisan serve` | เริ่ม dev server (localhost:8000) |
+
+---
+
+## โครงสร้างโปรเจค
+
+```
+mdt/
+├── app/                    # Application code
+│   ├── Http/Controllers/   # Controllers
+│   ├── Models/             # Eloquent Models
+│   └── Services/           # Business Logic
+├── config/                 # Configuration files
+├── database/
+│   ├── migrations/         # Database migrations
+│   └── seeders/            # Data seeders
+├── public/                 # Web root (Document Root)
+├── resources/
+│   ├── css/                # Stylesheets
+│   ├── js/                 # JavaScript
+│   └── views/              # Blade templates
+├── routes/                 # Route definitions
+├── storage/                # Logs, cache, uploads
+├── .env.example            # Environment template
+├── .env.production.example # Production template
+├── deploy.sh               # Deployment script
+├── install.sh              # Interactive installer
+├── quick-install.sh        # Quick installer
+├── VERSION                 # Version number
+└── ...
+```
+
+---
+
+## System Requirements
+
+- **PHP** >= 8.2 (with extensions: mbstring, xml, zip, curl, bcmath, gd)
+- **Composer** >= 2.x
+- **Node.js** >= 18 (recommended: 20 LTS)
+- **Database**: SQLite (dev) หรือ MySQL 8.0+ (production)
+- **Web Server**: Nginx (recommended) หรือ Apache
+- **OS**: Ubuntu 22.04+ / Debian 12+
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
