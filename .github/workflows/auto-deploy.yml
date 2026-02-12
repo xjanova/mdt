@@ -1,0 +1,83 @@
+name: Auto Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            DEMO_PATH="$DEPLOY_PATH/demo"
+            BACKUP_PATH="$DEPLOY_PATH/backups/$(date +%Y%m%d_%H%M%S)"
+
+            echo "🚀 Starting deployment..."
+
+            # Create backup
+            if [ -d "$DEMO_PATH" ]; then
+              echo "📦 Creating backup..."
+              mkdir -p "$DEPLOY_PATH/backups"
+              cp -r "$DEMO_PATH" "$BACKUP_PATH"
+              echo "Backup saved to: $BACKUP_PATH"
+            fi
+
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            cd "$DEPLOY_PATH"
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Set permissions
+            echo "🔒 Setting permissions..."
+            find "$DEMO_PATH" -type f -exec chmod 644 {} \;
+            find "$DEMO_PATH" -type d -exec chmod 755 {} \;
+
+            # Clean old backups (keep last 5)
+            echo "🧹 Cleaning old backups..."
+            cd "$DEPLOY_PATH/backups" 2>/dev/null && ls -dt */ | tail -n +6 | xargs rm -rf 2>/dev/null || true
+
+            echo "✅ Deployment complete!"
+
+      - name: Health Check
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            APP_URL="${{ secrets.APP_URL }}"
+            if [ -n "$APP_URL" ]; then
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/demo/" || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ Health check passed (HTTP $STATUS)"
+              else
+                echo "⚠️ Health check returned HTTP $STATUS"
+              fi
+            else
+              echo "⏭️ No APP_URL set, skipping health check"
+            fi
+
+      - name: Notify Success
+        if: success()
+        run: echo "✅ Deployment successful!"
+
+      - name: Notify Failure
+        if: failure()
+        run: echo "❌ Deployment failed!"

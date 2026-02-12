@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDT ERP - Siam Plaswood</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>
+/* ===== LOGIN SCREEN ===== */
+.login-screen {
+    position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f2027 100%);
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .5s, visibility .5s;
+}
+.login-screen.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+.login-container {
+    width:100%; max-width:480px; padding:20px;
+}
+.login-logo {
+    text-align:center; margin-bottom:30px;
+}
+.login-logo-icon {
+    width:80px; height:80px; border-radius:20px; margin:0 auto 16px;
+    background:var(--accent); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 32px rgba(245,158,11,0.3);
+}
+.login-logo-icon span { font-size:42px; font-weight:800; color:white; }
+.login-logo h1 { color:white; font-size:26px; font-weight:700; margin-bottom:2px; }
+.login-logo p { color:rgba(255,255,255,0.5); font-size:14px; }
+.login-card {
+    background:rgba(255,255,255,0.06); backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.1); border-radius:20px;
+    padding:32px; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+}
+.login-card h2 {
+    color:white; font-size:18px; font-weight:700; margin-bottom:6px; text-align:center;
+}
+.login-card .login-sub {
+    color:rgba(255,255,255,0.5); font-size:13px; text-align:center; margin-bottom:24px;
+}
+.login-roles { display:flex; flex-direction:column; gap:10px; }
+.login-role-btn {
+    display:flex; align-items:center; gap:14px;
+    padding:14px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.04); cursor:pointer; transition:all .2s;
+    text-decoration:none; font-family:'Sarabun',sans-serif;
+}
+.login-role-btn:hover {
+    background:rgba(255,255,255,0.1); border-color:var(--accent);
+    transform:translateX(6px); box-shadow:0 4px 16px rgba(245,158,11,0.15);
+}
+.login-role-btn:active { transform:translateX(3px); }
+.login-role-avatar {
+    width:44px; height:44px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; color:white; flex-shrink:0;
+}
+.login-role-info { flex:1; }
+.login-role-name { color:white; font-size:15px; font-weight:700; }
+.login-role-desc { color:rgba(255,255,255,0.45); font-size:11px; margin-top:1px; }
+.login-role-arrow { color:rgba(255,255,255,0.2); font-size:14px; transition:color .2s; }
+.login-role-btn:hover .login-role-arrow { color:var(--accent); }
+.login-role-creds {
+    color:rgba(255,255,255,0.3); font-size:10px; margin-top:3px; font-family:monospace;
+}
+.login-footer {
+    text-align:center; margin-top:24px; color:rgba(255,255,255,0.3); font-size:12px;
+}
+.login-footer a { color:var(--accent); text-decoration:none; }
+.login-footer a:hover { text-decoration:underline; }
+
+/* Particles */
+.login-particles {
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+}
+.login-particle {
+    position:absolute; border-radius:50%; background:rgba(245,158,11,0.15);
+    animation:loginFloat 15s infinite;
+}
+@keyframes loginFloat {
+    0%,100% { transform:translateY(0) scale(1); opacity:0.3; }
+    50% { transform:translateY(-80px) scale(1.2); opacity:0.6; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-particles">
+        <div class="login-particle" style="width:120px;height:120px;top:10%;left:10%;animation-delay:0s"></div>
+        <div class="login-particle" style="width:80px;height:80px;top:60%;left:80%;animation-delay:3s"></div>
+        <div class="login-particle" style="width:60px;height:60px;top:30%;left:60%;animation-delay:6s"></div>
+        <div class="login-particle" style="width:100px;height:100px;top:80%;left:25%;animation-delay:9s"></div>
+        <div class="login-particle" style="width:50px;height:50px;top:15%;left:85%;animation-delay:12s"></div>
+    </div>
+    <div class="login-container">
+        <div class="login-logo">
+            <div class="login-logo-icon"><span>M</span></div>
+            <h1>MDT ERP System</h1>
+            <p>Siam Plaswood - Modern Trade Management</p>
+        </div>
+        <div class="login-card">
+            <h2>เข้าสู่ระบบ</h2>
+            <p class="login-sub">เลือกบทบาทเพื่อเข้าสู่ระบบ Demo</p>
+            <div class="login-roles">
+                <a class="login-role-btn" onclick="loginAs('admin')">
+                    <div class="login-role-avatar" style="background:linear-gradient(135deg,#dc2626,#991b1b)">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <div class="login-role-info">
+                        <div class="login-role-name">Admin (ผู้ดูแลระบบ)</div>
+                        <div class="login-role-desc">เข้าถึงทุกฟังก์ชัน จัดการระบบ ผู้ใช้ รายงานรวม</div>
+                        <div class="login-role-creds">admin@siamplaswood.com / Admin@2026!</div>
+                    </div>
+                    <i class="fas fa-chevron-right login-role-arrow"></i>
+                </a>
+                <a class="login-role-btn" onclick="loginAs('supervisor')">
+                    <div class="login-role-avatar" style="background:linear-gradient(135deg,#f59e0b,#b45309)">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="login-role-info">
+                        <div class="login-role-name">หัวหน้างาน (Supervisor)</div>
+                        <div class="login-role-desc">จัดการทีม สร้างโฟลงาน ดูรายงาน อนุมัติงาน</div>
+                        <div class="login-role-creds">somchai@siamplaswood.com / Somchai@123</div>
+                    </div>
+                    <i class="fas fa-chevron-right login-role-arrow"></i>
+                </a>
+                <a class="login-role-btn" onclick="loginAs('seller')">
+                    <div class="login-role-avatar" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="login-role-info">
+                        <div class="login-role-name">PC / Seller (พนักงานขาย)</div>
+                        <div class="login-role-desc">ลงเวลา ดูยอดขาย แจ้งปัญหา ทำงานที่ได้รับ</div>
+                        <div class="login-role-creds">porntip@siamplaswood.com / Porntip@123</div>
+                    </div>
+                    <i class="fas fa-chevron-right login-role-arrow"></i>
+                </a>
+                <a class="login-role-btn" onclick="loginAs('hr')">
+                    <div class="login-role-avatar" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">
+                        <i class="fas fa-people-group"></i>
+                    </div>
+                    <div class="login-role-info">
+                        <div class="login-role-name">HR (ฝ่ายบุคคล)</div>
+                        <div class="login-role-desc">จัดการพนักงาน อนุมัติลา ดูเวลาทำงาน OT</div>
+                        <div class="login-role-creds">manee@siamplaswood.com / Manee@HR24</div>
+                    </div>
+                    <i class="fas fa-chevron-right login-role-arrow"></i>
+                </a>
+                <a class="login-role-btn" onclick="loginAs('employee')">
+                    <div class="login-role-avatar" style="background:linear-gradient(135deg,#6b7280,#374151)">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="login-role-info">
+                        <div class="login-role-name">พนักงาน (Employee)</div>
+                        <div class="login-role-desc">ลงเวลา เขียนใบลา ดูงานที่ได้รับ แจ้งปัญหา</div>
+                        <div class="login-role-creds">jaran@siamplaswood.com / Jaran@2026</div>
+                    </div>
+                    <i class="fas fa-chevron-right login-role-arrow"></i>
+                </a>
+            </div>
+        </div>
+        <div class="login-footer">
+            <p>&copy; 2026 <a href="https://github.com/xjanova/mdt" target="_blank">XMAN Studio</a> &bull; สยามพลาสวูด</p>
+        </div>
+    </div>
+</div>
+
+<!-- Role Switcher Bar -->
+<div class="role-bar" id="roleBar" style="display:none">
+    <div class="role-bar-brand">
+        <i class="fas fa-cube"></i> MDT Demo
+    </div>
+    <div class="role-bar-switches">
+        <span class="role-bar-label">ดูมุมมอง:</span>
+        <button class="role-btn active" data-role="admin" onclick="switchRole('admin')">
+            <i class="fas fa-shield-halved"></i> Admin
+        </button>
+        <button class="role-btn" data-role="supervisor" onclick="switchRole('supervisor')">
+            <i class="fas fa-user-tie"></i> หัวหน้างาน
+        </button>
+        <button class="role-btn" data-role="seller" onclick="switchRole('seller')">
+            <i class="fas fa-store"></i> PC/Seller
+        </button>
+        <button class="role-btn" data-role="hr" onclick="switchRole('hr')">
+            <i class="fas fa-people-group"></i> HR
+        </button>
+        <button class="role-btn" data-role="employee" onclick="switchRole('employee')">
+            <i class="fas fa-user"></i> พนักงาน
+        </button>
+        <button class="role-btn" style="margin-left:8px;border-color:var(--danger);color:var(--danger)" onclick="logout()" title="ออกจากระบบ">
+            <i class="fas fa-right-from-bracket"></i> ออก
+        </button>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar" style="display:none">
+    <div class="sidebar-header">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23f59e0b'/%3E%3Ctext x='20' y='28' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E" alt="Logo" class="sidebar-logo">
+        <div>
+            <div class="sidebar-brand">สยามพลาสวูด</div>
+            <div class="sidebar-sub">MDT ERP System</div>
+        </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+        <!-- Menu items injected by JS based on role -->
+    </nav>
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div class="user-name" id="userName">Admin</div>
+                <div class="user-role" id="userRole">ผู้ดูแลระบบ</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content" id="mainContent" style="display:none">
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="page-title" id="pageTitle">แดชบอร์ด</h1>
+        </div>
+        <div class="top-bar-right">
+            <button class="top-btn" onclick="showNotifications()" title="การแจ้งเตือน">
+                <i class="fas fa-bell"></i>
+                <span class="badge">3</span>
+            </button>
+            <button class="top-btn" onclick="loadPage('ai')" title="AI Assistant">
+                <i class="fas fa-robot"></i>
+            </button>
+            <span class="top-date" id="topDate"></span>
+        </div>
+    </header>
+    <div class="content-area" id="contentArea">
+        <!-- Page content loaded here -->
+    </div>
+</main>
+
+<!-- Notification Panel -->
+<div class="notif-overlay" id="notifOverlay" onclick="if(event.target===this)closeNotif()">
+    <div class="notif-panel">
+        <div class="notif-header">
+            <h3><i class="fas fa-bell"></i> การแจ้งเตือน</h3>
+            <button onclick="closeNotif()">&times;</button>
+        </div>
+        <div class="notif-list">
+            <div class="notif-item unread">
+                <div class="notif-icon" style="background:#ef4444"><i class="fas fa-exclamation-triangle"></i></div>
+                <div><strong>ปัญหาเร่งด่วน</strong><p>ป้ายโปรโมชั่นหมดอายุยังแสดงอยู่ - สาขา Mega Bangna</p><span class="notif-time">5 นาทีที่แล้ว</span></div>
+            </div>
+            <div class="notif-item unread">
+                <div class="notif-icon" style="background:#f59e0b"><i class="fas fa-clock"></i></div>
+                <div><strong>พนักงานมาสาย</strong><p>สมชาย ใจดี - สาขา Central Ladprao (รถติด)</p><span class="notif-time">30 นาทีที่แล้ว</span></div>
+            </div>
+            <div class="notif-item">
+                <div class="notif-icon" style="background:#22c55e"><i class="fas fa-check-circle"></i></div>
+                <div><strong>โฟลงานเสร็จสิ้น</strong><p>โปรโมชั่นประตูไม้สัก 30% - Central Ladprao</p><span class="notif-time">2 ชั่วโมงที่แล้ว</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/attendance.js"></script>
+<script src="js/pages/sales.js"></script>
+<script src="js/pages/workflows.js"></script>
+<script src="js/pages/problems.js"></script>
+<script src="js/pages/branches.js"></script>
+<script src="js/pages/communications.js"></script>
+<script src="js/pages/hr.js"></script>
+<script src="js/pages/import.js"></script>
+<script src="js/pages/ai.js"></script>
+<script src="js/pages/users.js"></script>
+<script src="js/pages/settings.js"></script>
+<script>
+// Login function
+function loginAs(role) {
+    const loginScreen = document.getElementById('loginScreen');
+    const roleBar = document.getElementById('roleBar');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    // Animate login screen out
+    loginScreen.classList.add('hidden');
+
+    // Show app
+    setTimeout(() => {
+        loginScreen.style.display = 'none';
+        roleBar.style.display = '';
+        sidebar.style.display = '';
+        mainContent.style.display = '';
+        document.getElementById('topDate').textContent = new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+        switchRole(role);
+    }, 400);
+}
+
+// Logout function
+function logout() {
+    const loginScreen = document.getElementById('loginScreen');
+    const roleBar = document.getElementById('roleBar');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    // Hide app
+    roleBar.style.display = 'none';
+    sidebar.style.display = 'none';
+    mainContent.style.display = 'none';
+
+    // Show login screen
+    loginScreen.style.display = '';
+    loginScreen.classList.remove('hidden');
+}
+
+// Init — show login screen (no auto-login)
+document.addEventListener('DOMContentLoaded', () => {
+    // Login screen is shown by default
+});
+</script>
+</body>
+</html>
