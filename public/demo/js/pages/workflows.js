@@ -1,37 +1,122 @@
 /* Workflows / Task Assignment Page */
 function renderWorkflows(role) {
     const c = document.getElementById('contentArea');
-    const isCreator = (role === 'admin' || role === 'supervisor');
-    c.innerHTML = `
-    ${isCreator ? `<div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="showCreateWorkflow()"><i class="fas fa-plus"></i> สร้างโฟลงานใหม่</button>
-        <button class="btn btn-accent" onclick="showCreateWorkflow('problem')"><i class="fas fa-wrench"></i> สร้างโฟลแก้ปัญหา</button>
-        <button class="btn btn-outline" onclick="showCreateWorkflow('cross')"><i class="fas fa-arrows-alt-h"></i> ประสานงานข้ามสาขา</button>
-    </div>` : ''}
+    if (role === 'seller' || role === 'employee') {
+        c.innerHTML = getWorkflowsMyTasks(role);
+    } else {
+        const isCreator = (role === 'admin' || role === 'supervisor');
+        c.innerHTML = `
+        ${isCreator ? `<div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="showCreateWorkflow()"><i class="fas fa-plus"></i> สร้างโฟลงานใหม่</button>
+            <button class="btn btn-accent" onclick="showCreateWorkflow('problem')"><i class="fas fa-wrench"></i> สร้างโฟลแก้ปัญหา</button>
+            ${role === 'admin' ? '<button class="btn btn-outline" onclick="showCreateWorkflow(\'cross\')"><i class="fas fa-arrows-alt-h"></i> ประสานงานข้ามสาขา</button>' : ''}
+        </div>` : ''}
 
-    <div class="filter-bar">
-        <div class="form-group"><label class="form-label">ประเภท</label>
-            <select class="form-control"><option>ทั้งหมด</option><option>มอบหมายงาน</option><option>แก้ปัญหา</option><option>โปรโมชั่น</option><option>โปรเจค</option><option>ข้ามสาขา</option></select>
+        <div class="filter-bar">
+            <div class="form-group"><label class="form-label">ประเภท</label>
+                <select class="form-control"><option>ทั้งหมด</option><option>มอบหมายงาน</option><option>แก้ปัญหา</option><option>โปรโมชั่น</option><option>โปรเจค</option><option>ข้ามสาขา</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">สถานะ</label>
+                <select class="form-control"><option>ทั้งหมด</option><option>รอดำเนินการ</option><option>กำลังทำ</option><option>เสร็จสิ้น</option><option>เลยกำหนด</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">ค้นหา</label>
+                <input type="text" class="form-control" placeholder="ชื่อโฟล หรือ ผู้รับผิดชอบ...">
+            </div>
+            <div class="form-group" style="align-self:end"><button class="btn btn-primary"><i class="fas fa-search"></i></button></div>
         </div>
-        <div class="form-group"><label class="form-label">สถานะ</label>
-            <select class="form-control"><option>ทั้งหมด</option><option>รอดำเนินการ</option><option>กำลังทำ</option><option>เสร็จสิ้น</option><option>เลยกำหนด</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">ค้นหา</label>
-            <input type="text" class="form-control" placeholder="ชื่อโฟล หรือ ผู้รับผิดชอบ...">
-        </div>
-        <div class="form-group" style="align-self:end"><button class="btn btn-primary"><i class="fas fa-search"></i></button></div>
-    </div>
 
-    <div class="stats-grid" style="grid-template-columns:repeat(5,1fr)">
-        <div class="stat-card"><div class="stat-icon" style="background:var(--primary)"><i class="fas fa-layer-group"></i></div><div><div class="stat-value">12</div><div class="stat-label">ทั้งหมด</div></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-spinner"></i></div><div><div class="stat-value">6</div><div class="stat-label">กำลังทำ</div></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:var(--success)"><i class="fas fa-check"></i></div><div><div class="stat-value">4</div><div class="stat-label">เสร็จสิ้น</div></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:var(--danger)"><i class="fas fa-clock"></i></div><div><div class="stat-value">1</div><div class="stat-label">เลยกำหนด</div></div></div>
+        <div class="stats-grid" style="grid-template-columns:repeat(5,1fr)">
+            <div class="stat-card"><div class="stat-icon" style="background:var(--primary)"><i class="fas fa-layer-group"></i></div><div><div class="stat-value">${role==='admin'?'12':'8'}</div><div class="stat-label">ทั้งหมด</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-spinner"></i></div><div><div class="stat-value">${role==='admin'?'6':'4'}</div><div class="stat-label">กำลังทำ</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--success)"><i class="fas fa-check"></i></div><div><div class="stat-value">${role==='admin'?'4':'3'}</div><div class="stat-label">เสร็จสิ้น</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--danger)"><i class="fas fa-clock"></i></div><div><div class="stat-value">1</div><div class="stat-label">เลยกำหนด</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--warning)"><i class="fas fa-pause"></i></div><div><div class="stat-value">1</div><div class="stat-label">รอเริ่ม</div></div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px" id="workflowList">
+            ${getWorkflowCards(role)}
+        </div>`;
+    }
+}
+
+function getWorkflowsMyTasks(role) {
+    const name = role === 'seller' ? 'พรทิพย์' : 'จรัญ';
+    return `
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-spinner"></i></div><div><div class="stat-value">2</div><div class="stat-label">กำลังทำ</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--success)"><i class="fas fa-check"></i></div><div><div class="stat-value">3</div><div class="stat-label">เสร็จสิ้น</div></div></div>
         <div class="stat-card"><div class="stat-icon" style="background:var(--warning)"><i class="fas fa-pause"></i></div><div><div class="stat-value">1</div><div class="stat-label">รอเริ่ม</div></div></div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px" id="workflowList">
-        ${getWorkflowCards(role)}
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:12px"><i class="fas fa-tasks" style="color:var(--info);margin-right:6px"></i> งานที่ได้รับมอบหมาย</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
+        <div class="wf-card type-problem" onclick="showWorkflowDetail(1)">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                <div class="wf-title">ตรวจสอบราคาป้ายให้ตรงกับระบบ</div>
+                <span class="tag tag-warning">สูง</span>
+            </div>
+            <div class="wf-desc">แก้ไขราคาที่ไม่ตรง 3 รายการ</div>
+            <div style="display:flex;gap:6px;margin:8px 0"><span class="tag tag-info">กำลังทำ</span><span class="tag tag-primary">มอบหมายงาน</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+                <div class="progress" style="flex:1"><div class="progress-bar amber" style="width:50%"></div></div>
+                <span style="font-size:12px;font-weight:700;color:var(--gray-600)">50%</span>
+            </div>
+            <div class="wf-meta">
+                <span><i class="fas fa-user"></i> มอบหมายโดย: สมชาย</span>
+                <span><i class="fas fa-calendar"></i> กำหนด 14 ก.พ.</span>
+            </div>
+        </div>
+
+        <div class="wf-card type-task" onclick="showWorkflowDetail(6)">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                <div class="wf-title">ถ่ายรูปตัวโชว์ประตู ANYHOME รุ่นใหม่</div>
+                <span class="tag tag-gray">ต่ำ</span>
+            </div>
+            <div class="wf-desc">ถ่ายรูปส่งรายงานส่วนกลาง</div>
+            <div style="display:flex;gap:6px;margin:8px 0"><span class="tag tag-gray">รอเริ่ม</span><span class="tag tag-primary">มอบหมายงาน</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+                <div class="progress" style="flex:1"><div class="progress-bar red" style="width:0%"></div></div>
+                <span style="font-size:12px;font-weight:700;color:var(--gray-600)">0%</span>
+            </div>
+            <div class="wf-meta">
+                <span><i class="fas fa-user"></i> มอบหมายโดย: สมชาย</span>
+                <span><i class="fas fa-calendar"></i> กำหนด 16 ก.พ.</span>
+            </div>
+        </div>
+
+        ${role === 'employee' ? `
+        <div class="wf-card type-task" onclick="showWorkflowDetail(7)">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                <div class="wf-title">ตรวจสอบสต๊อกประตูห้องน้ำ</div>
+                <span class="tag tag-warning">สูง</span>
+            </div>
+            <div class="wf-desc">นับสต๊อกจริงและรายงานผล</div>
+            <div style="display:flex;gap:6px;margin:8px 0"><span class="tag tag-info">กำลังทำ</span><span class="tag tag-primary">มอบหมายงาน</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+                <div class="progress" style="flex:1"><div class="progress-bar blue" style="width:20%"></div></div>
+                <span style="font-size:12px;font-weight:700;color:var(--gray-600)">20%</span>
+            </div>
+            <div class="wf-meta">
+                <span><i class="fas fa-user"></i> มอบหมายโดย: สมชาย</span>
+                <span><i class="fas fa-calendar"></i> กำหนด 14 ก.พ.</span>
+            </div>
+        </div>` : ''}
+    </div>
+
+    <h3 style="font-size:16px;font-weight:700;margin:24px 0 12px"><i class="fas fa-check-circle" style="color:var(--success);margin-right:6px"></i> งานที่เสร็จแล้ว</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
+        <div class="wf-card type-task" style="opacity:0.7">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                <div class="wf-title">ตรวจราคาป้ายทุกสาขา HomePro</div>
+                <span class="tag tag-success">เสร็จสิ้น</span>
+            </div>
+            <div class="wf-desc">ตรวจสอบว่าป้ายราคาตรงกับระบบ</div>
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+                <div class="progress" style="flex:1"><div class="progress-bar green" style="width:100%"></div></div>
+                <span style="font-size:12px;font-weight:700;color:var(--success)">100%</span>
+            </div>
+            <div class="wf-meta"><span><i class="fas fa-calendar"></i> เสร็จ 10 ก.พ.</span></div>
+        </div>
     </div>`;
 }
 

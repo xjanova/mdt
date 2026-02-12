@@ -1,7 +1,226 @@
 /* Sales Report Page */
 function renderSales(role) {
     const c = document.getElementById('contentArea');
-    c.innerHTML = `
+    if (role === 'admin') {
+        c.innerHTML = getSalesAdmin();
+    } else if (role === 'supervisor') {
+        c.innerHTML = getSalesSupervisor();
+    } else if (role === 'seller') {
+        c.innerHTML = getSalesSeller();
+    } else {
+        c.innerHTML = getSalesLimited();
+    }
+}
+
+function getSalesLimited() {
+    return `
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a)"><i class="fas fa-baht-sign"></i></div>
+            <div><div class="stat-value">${fmtMoney(8500000)}</div><div class="stat-label">ยอดขายรวมบริษัท</div><div class="stat-change up"><i class="fas fa-arrow-up"></i> +12.5%</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><i class="fas fa-boxes-stacked"></i></div>
+            <div><div class="stat-value">1,245</div><div class="stat-label">จำนวนชิ้นที่ขาย</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)"><i class="fas fa-store"></i></div>
+            <div><div class="stat-value">18</div><div class="stat-label">สาขาทั้งหมด</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:6px"></i> สรุปผลงานตามห้าง</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>ห้าง</th><th>ยอดขาย</th><th>สัดส่วน</th><th>แนวโน้ม</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>HomePro</strong></td><td style="text-align:right">${fmtMoney(3250000)}</td>
+                        <td><div class="progress" style="width:100px"><div class="progress-bar blue" style="width:38%"></div></div></td>
+                        <td><span class="stat-change up">+15%</span></td></tr>
+                    <tr><td><strong>DoHome</strong></td><td style="text-align:right">${fmtMoney(2800000)}</td>
+                        <td><div class="progress" style="width:100px"><div class="progress-bar green" style="width:33%"></div></div></td>
+                        <td><span class="stat-change up">+8%</span></td></tr>
+                    <tr><td><strong>BnB Home (BTV)</strong></td><td style="text-align:right">${fmtMoney(1650000)}</td>
+                        <td><div class="progress" style="width:100px"><div class="progress-bar amber" style="width:19%"></div></div></td>
+                        <td><span class="stat-change down">-3%</span></td></tr>
+                    <tr><td><strong>MegaHome</strong></td><td style="text-align:right">${fmtMoney(800000)}</td>
+                        <td><div class="progress" style="width:100px"><div class="progress-bar red" style="width:10%"></div></div></td>
+                        <td><span class="stat-change up">+22%</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-trophy" style="color:var(--accent);margin-right:6px"></i> Top 5 สินค้าขายดี</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>#</th><th>สินค้า</th><th>แบรนด์</th><th>จำนวน</th></tr></thead>
+                <tbody>
+                    <tr><td><span style="color:var(--accent);font-weight:700">1</span></td><td>ประตูห้องน้ำPVC BW-G1A 70x200 GYW</td><td><span class="tag tag-info">ANYHOME</span></td><td>120</td></tr>
+                    <tr><td><span style="color:var(--accent);font-weight:700">2</span></td><td>ประตูภายในUPVC BN-01 70x200 WH</td><td><span class="tag tag-primary">AZLE</span></td><td>98</td></tr>
+                    <tr><td><span style="color:var(--accent);font-weight:700">3</span></td><td>วงกบUPVC 70x200 ขาว</td><td><span class="tag tag-success">EXTERA</span></td><td>85</td></tr>
+                    <tr><td><span style="color:var(--accent);font-weight:700">4</span></td><td>ประตูPVC เกล็ด G1A 70x200</td><td><span class="tag tag-purple">POLY TIMBER</span></td><td>72</td></tr>
+                    <tr><td><span style="color:var(--accent);font-weight:700">5</span></td><td>ประตูภายนอก UPVC L-35 80x200</td><td><span class="tag tag-primary">AZLE</span></td><td>45</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <p style="text-align:center;color:var(--gray-400);font-size:12px;margin-top:12px"><i class="fas fa-lock"></i> ข้อมูลรายละเอียดสงวนสิทธิ์สำหรับ Admin และ Supervisor</p>`;
+}
+
+function getSalesSeller() {
+    return `
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a)"><i class="fas fa-baht-sign"></i></div>
+            <div><div class="stat-value">${fmtMoney(285000)}</div><div class="stat-label">ยอดขายของฉัน (เดือนนี้)</div><div class="stat-change up"><i class="fas fa-arrow-up"></i> +18%</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><i class="fas fa-boxes-stacked"></i></div>
+            <div><div class="stat-value">34</div><div class="stat-label">จำนวนชิ้นที่ขาย</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><i class="fas fa-receipt"></i></div>
+            <div><div class="stat-value">18</div><div class="stat-label">จำนวนบิล</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)"><i class="fas fa-bullseye"></i></div>
+            <div><div class="stat-value">71%</div><div class="stat-label">เป้าหมาย (${fmtMoney(400000)})</div></div>
+        </div>
+    </div>
+
+    <div style="margin-bottom:20px;padding:16px;background:white;border-radius:var(--radius);box-shadow:var(--shadow)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-weight:700">ความคืบหน้าเป้าหมาย</span>
+            <span style="font-weight:700;color:var(--primary)">${fmtMoney(285000)} / ${fmtMoney(400000)}</span>
+        </div>
+        <div class="progress" style="height:12px"><div class="progress-bar blue" style="width:71%"></div></div>
+        <p style="font-size:12px;color:var(--gray-500);margin-top:4px">เหลืออีก ${fmtMoney(115000)} เพื่อถึงเป้าหมาย</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list" style="color:var(--primary);margin-right:6px"></i> รายการขายของฉัน</h3>
+            <select class="form-control" style="width:auto">
+                <option>เดือนนี้</option><option>สัปดาห์นี้</option><option>วันนี้</option>
+            </select>
+        </div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>วันที่</th><th>สินค้า</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>รวม</th><th>การชำระ</th></tr></thead>
+                <tbody>
+                    <tr><td>13 ก.พ.</td><td>ประตู UPVC BN-01 70x200</td><td>2</td><td>1,790</td><td>${fmtMoney(3580)}</td><td><span class="tag tag-success">เงินสด</span></td></tr>
+                    <tr><td>13 ก.พ.</td><td>วงกบ WPC 80x200</td><td>3</td><td>1,490</td><td>${fmtMoney(4470)}</td><td><span class="tag tag-info">บัตรเครดิต</span></td></tr>
+                    <tr><td>12 ก.พ.</td><td>ประตูห้องน้ำ PVC BW</td><td>5</td><td>1,190</td><td>${fmtMoney(5950)}</td><td><span class="tag tag-success">เงินสด</span></td></tr>
+                    <tr><td>12 ก.พ.</td><td>ประตูภายนอก UPVC L-35</td><td>1</td><td>3,890</td><td>${fmtMoney(3890)}</td><td><span class="tag tag-primary">โอน</span></td></tr>
+                    <tr><td>11 ก.พ.</td><td>ประตูPVC G1A 70x200</td><td>4</td><td>1,690</td><td>${fmtMoney(6760)}</td><td><span class="tag tag-success">เงินสด</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-trophy" style="color:var(--accent);margin-right:6px"></i> Top 5 สินค้าที่ฉันขายได้</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>#</th><th>สินค้า</th><th>จำนวน</th><th>รวม</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>ประตูห้องน้ำ PVC BW-G1A</td><td>12</td><td>${fmtMoney(14280)}</td></tr>
+                    <tr><td>2</td><td>ประตู UPVC BN-01 70x200</td><td>8</td><td>${fmtMoney(14320)}</td></tr>
+                    <tr><td>3</td><td>วงกบ WPC 80x200</td><td>6</td><td>${fmtMoney(8940)}</td></tr>
+                    <tr><td>4</td><td>ประตูPVC G1A 70x200</td><td>5</td><td>${fmtMoney(8450)}</td></tr>
+                    <tr><td>5</td><td>ประตูภายนอก UPVC L-35</td><td>3</td><td>${fmtMoney(11670)}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>`;
+}
+
+function getSalesSupervisor() {
+    return `
+    <div class="filter-bar">
+        <div class="form-group"><label class="form-label">ช่วงวันที่</label>
+            <div style="display:flex;gap:6px"><input type="date" class="form-control" value="2026-02-01"><input type="date" class="form-control" value="2026-02-13"></div>
+        </div>
+        <div class="form-group"><label class="form-label">สาขา</label>
+            <select class="form-control"><option>สาขาในความดูแล</option><option>HomePro เอกมัย</option><option>BnB พระราม2</option><option>HomePro พัทยา</option><option>DoHome ระยอง</option><option>MegaHome รังสิต</option></select>
+        </div>
+        <div class="form-group" style="align-self:end"><button class="btn btn-primary" onclick="showToast('กรองข้อมูลแล้ว')"><i class="fas fa-search"></i> ค้นหา</button></div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a)"><i class="fas fa-baht-sign"></i></div>
+            <div><div class="stat-value">${fmtMoney(2800000)}</div><div class="stat-label">ยอดขายทีม</div><div class="stat-change up"><i class="fas fa-arrow-up"></i> +9.2%</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><i class="fas fa-boxes-stacked"></i></div>
+            <div><div class="stat-value">410</div><div class="stat-label">จำนวนชิ้นที่ขาย</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><i class="fas fa-store"></i></div>
+            <div><div class="stat-value">5</div><div class="stat-label">สาขาในดูแล</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)"><i class="fas fa-bullseye"></i></div>
+            <div><div class="stat-value">82%</div><div class="stat-label">ถึงเป้าหมาย</div></div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:6px"></i> ยอดขายตามสาขา</h3></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>สาขา</th><th>ยอดขาย</th><th>เป้า</th><th>%</th><th>แนวโน้ม</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>HomePro เอกมัย</strong></td><td>${fmtMoney(850000)}</td><td>${fmtMoney(1000000)}</td><td>85%</td><td><span class="stat-change up">+15%</span></td></tr>
+                        <tr><td><strong>BnB พระราม2</strong></td><td>${fmtMoney(620000)}</td><td>${fmtMoney(700000)}</td><td>89%</td><td><span class="stat-change up">+5%</span></td></tr>
+                        <tr><td><strong>HomePro พัทยา</strong></td><td>${fmtMoney(540000)}</td><td>${fmtMoney(600000)}</td><td>90%</td><td><span class="stat-change down">-2%</span></td></tr>
+                        <tr><td><strong>DoHome ระยอง</strong></td><td>${fmtMoney(480000)}</td><td>${fmtMoney(600000)}</td><td>80%</td><td><span class="stat-change up">+8%</span></td></tr>
+                        <tr><td><strong>MegaHome รังสิต</strong></td><td>${fmtMoney(310000)}</td><td>${fmtMoney(500000)}</td><td>62%</td><td><span class="stat-change up">+22%</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-users" style="color:var(--success);margin-right:6px"></i> ยอดขายตาม PC</h3></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>PC</th><th>สาขา</th><th>ยอดขาย</th><th>เป้า %</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>พรทิพย์</strong></td><td>HomePro เอกมัย</td><td>${fmtMoney(285000)}</td><td><span class="tag tag-success">71%</span></td></tr>
+                        <tr><td><strong>มานี</strong></td><td>BnB พระราม2</td><td>${fmtMoney(260000)}</td><td><span class="tag tag-success">65%</span></td></tr>
+                        <tr><td><strong>จรัญ</strong></td><td>HomePro พัทยา</td><td>${fmtMoney(220000)}</td><td><span class="tag tag-warning">55%</span></td></tr>
+                        <tr><td><strong>สุดา</strong></td><td>DoHome ระยอง</td><td>${fmtMoney(195000)}</td><td><span class="tag tag-warning">49%</span></td></tr>
+                        <tr><td><strong>วิชัย</strong></td><td>MegaHome รังสิต</td><td>${fmtMoney(150000)}</td><td><span class="tag tag-danger">38%</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-list" style="color:var(--gray-500);margin-right:6px"></i> รายการขายล่าสุด (สาขาในดูแล)</h3>
+            <button class="btn btn-sm btn-outline" onclick="showToast('Export Excel')"><i class="fas fa-file-excel"></i> Export</button></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>วันที่</th><th>สาขา</th><th>PC</th><th>สินค้า</th><th>จำนวน</th><th>รวม</th></tr></thead>
+                <tbody>
+                    <tr><td>13 ก.พ.</td><td>HomePro เอกมัย</td><td>พรทิพย์</td><td>ประตู UPVC BN-01 70x200</td><td>2</td><td>${fmtMoney(3580)}</td></tr>
+                    <tr><td>13 ก.พ.</td><td>BnB พระราม2</td><td>มานี</td><td>ประตูห้องน้ำ PVC BW</td><td>5</td><td>${fmtMoney(5950)}</td></tr>
+                    <tr><td>12 ก.พ.</td><td>HomePro พัทยา</td><td>จรัญ</td><td>ประตู UPVC L-35 80x200</td><td>1</td><td>${fmtMoney(3890)}</td></tr>
+                    <tr><td>12 ก.พ.</td><td>DoHome ระยอง</td><td>สุดา</td><td>ประตูPVC G1A 70x200</td><td>4</td><td>${fmtMoney(6760)}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>`;
+}
+
+function getSalesAdmin() {
+    return `
     <div class="filter-bar">
         <div class="form-group"><label class="form-label">ช่วงวันที่</label>
             <div style="display:flex;gap:6px"><input type="date" class="form-control" value="2026-02-01"><input type="date" class="form-control" value="2026-02-13"></div>

@@ -1,7 +1,122 @@
 /* Problem Tracking Page */
 function renderProblems(role) {
     const c = document.getElementById('contentArea');
-    c.innerHTML = `
+    if (role === 'hr') {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><p>ฝ่าย HR ไม่มีสิทธิ์เข้าถึงหน้าติดตามปัญหา</p><button class="btn btn-primary" style="margin-top:12px" onclick="loadPage('dashboard')"><i class="fas fa-arrow-left"></i> กลับแดชบอร์ด</button></div>`;
+    } else if (role === 'seller' || role === 'employee') {
+        c.innerHTML = getProblemsMyReports(role);
+    } else if (role === 'supervisor') {
+        c.innerHTML = getProblemsSupervisor();
+    } else {
+        c.innerHTML = getProblemsAdmin();
+    }
+}
+
+function getProblemsMyReports(role) {
+    const name = role === 'seller' ? 'พรทิพย์' : 'จรัญ';
+    return `
+    <div style="margin-bottom:16px;display:flex;gap:10px">
+        <button class="btn btn-danger" onclick="showReportProblem()"><i class="fas fa-plus"></i> แจ้งปัญหาใหม่</button>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-folder-open"></i></div><div><div class="stat-value">1</div><div class="stat-label">ที่ฉันแจ้ง</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--primary)"><i class="fas fa-wrench"></i></div><div><div class="stat-value">1</div><div class="stat-label">กำลังแก้ไข</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--success)"><i class="fas fa-check"></i></div><div><div class="stat-value">2</div><div class="stat-label">แก้ไขแล้ว</div></div></div>
+    </div>
+
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:12px"><i class="fas fa-exclamation-circle" style="color:var(--warning);margin-right:6px"></i> ปัญหาที่ฉันแจ้ง</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
+        <div class="wf-card type-problem" onclick="showProblemDetail(1)" style="border-left-color:var(--danger)">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
+                <div class="wf-title">ป้ายโปรโมชั่นหมดอายุยังแสดงอยู่</div>
+                <span class="tag tag-danger">เร่งด่วน</span>
+            </div>
+            <div class="wf-desc">ป้ายลด 30% หมดอายุ 31 ม.ค. แต่ยังติดอยู่</div>
+            <div style="display:flex;gap:6px;margin:8px 0"><span class="tag tag-warning">รับทราบ</span><span class="tag tag-gray">โปรโมชั่น</span></div>
+            <div class="wf-meta">
+                <span><i class="fas fa-store"></i> Mega Bangna</span>
+                <span><i class="fas fa-user"></i> ${name}</span>
+                <span><i class="fas fa-clock"></i> 5 นาที</span>
+            </div>
+        </div>
+
+        <div class="wf-card type-problem" style="border-left-color:var(--gray-300)">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
+                <div class="wf-title">ราคาไม่ตรงกับป้าย 3 รายการ</div>
+                <span class="tag tag-gray">ปานกลาง</span>
+            </div>
+            <div class="wf-desc">วงกบ WPC ราคาระบบ 1490 แต่ป้าย 1590</div>
+            <div style="display:flex;gap:6px;margin:8px 0"><span class="tag tag-primary">เปิดใหม่</span><span class="tag tag-gray">สต๊อก/จัดแสดง</span></div>
+            <div class="wf-meta">
+                <span><i class="fas fa-store"></i> DoHome บางบัวทอง</span>
+                <span><i class="fas fa-user"></i> ${name}</span>
+                <span><i class="fas fa-clock"></i> 30 นาที</span>
+            </div>
+        </div>
+    </div>`;
+}
+
+function getProblemsSupervisor() {
+    return `
+    <div style="margin-bottom:16px;display:flex;gap:10px">
+        <button class="btn btn-danger" onclick="showReportProblem()"><i class="fas fa-plus"></i> แจ้งปัญหาใหม่</button>
+    </div>
+
+    <div class="filter-bar">
+        <div class="form-group"><label class="form-label">สถานะ</label>
+            <select class="form-control"><option>ทั้งหมด</option><option>เปิดใหม่</option><option>รับทราบ</option><option>กำลังแก้ไข</option><option>แก้ไขแล้ว</option></select></div>
+        <div class="form-group"><label class="form-label">หมวด</label>
+            <select class="form-control"><option>ทั้งหมด</option><option>สต๊อก/จัดแสดง</option><option>โปรโมชั่น</option><option>สินค้าเสียหาย</option><option>ลูกค้าร้องเรียน</option></select></div>
+        <div class="form-group"><label class="form-label">สาขา</label>
+            <select class="form-control"><option>สาขาในความดูแล</option><option>HomePro เอกมัย</option><option>BnB พระราม2</option><option>HomePro พัทยา</option></select></div>
+        <div class="form-group" style="align-self:end"><button class="btn btn-primary"><i class="fas fa-search"></i></button></div>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-folder-open"></i></div><div><div class="stat-value">1</div><div class="stat-label">เปิดใหม่</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--warning)"><i class="fas fa-eye"></i></div><div><div class="stat-value">1</div><div class="stat-label">รับทราบ</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--primary)"><i class="fas fa-wrench"></i></div><div><div class="stat-value">1</div><div class="stat-label">กำลังแก้ไข</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--danger)"><i class="fas fa-fire"></i></div><div><div class="stat-value">1</div><div class="stat-label">เร่งด่วน</div></div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
+        ${getProblemCardsSupervisor()}
+    </div>`;
+}
+
+function getProblemCardsSupervisor() {
+    const problems = [
+        { id:1, title:'ป้ายโปรโมชั่นหมดอายุยังแสดงอยู่', desc:'ป้ายลด 30% หมดอายุ 31 ม.ค. แต่ยังติดอยู่', branch:'HomePro เอกมัย', cat:'โปรโมชั่น', severity:'เร่งด่วน', sevClass:'tag-danger', status:'รับทราบ', stClass:'tag-warning', progress:10, reporter:'พรทิพย์', time:'5 นาที', comments:3, photos:2 },
+        { id:2, title:'ประตูโชว์ไม่ได้จัดวางตาม Schematic', desc:'ประตู UPVC BN-01 ต้องจัดโชว์แต่ไม่ได้วาง', branch:'HomePro เอกมัย', cat:'สต๊อก/จัดแสดง', severity:'สูง', sevClass:'tag-warning', status:'กำลังแก้', stClass:'tag-info', progress:60, reporter:'สมชาย', time:'2 ชม.', comments:5, photos:3 },
+        { id:4, title:'ประตูโชว์มีรอยขีดข่วน', desc:'ประตูไม้สักตัวโชว์มีรอยขีดข่วน 2 จุด', branch:'HomePro พัทยา', cat:'สินค้าเสียหาย', severity:'ปานกลาง', sevClass:'tag-gray', status:'เปิดใหม่', stClass:'tag-primary', progress:0, reporter:'จรัญ', time:'3 ชม.', comments:0, photos:2 },
+    ];
+    return problems.map(p => `
+        <div class="wf-card type-problem" onclick="showProblemDetail(${p.id})" style="border-left-color:${p.severity==='เร่งด่วน'?'var(--danger)':p.severity==='สูง'?'var(--warning)':'var(--gray-300)'}">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
+                <div class="wf-title">${p.title}</div>
+                <span class="tag ${p.sevClass}">${p.severity}</span>
+            </div>
+            <div class="wf-desc">${p.desc}</div>
+            <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+                <span class="tag ${p.stClass}">${p.status}</span>
+                <span class="tag tag-gray">${p.cat}</span>
+            </div>
+            ${p.progress > 0 ? `<div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+                <div class="progress" style="flex:1"><div class="progress-bar ${p.progress>=60?'green':'amber'}" style="width:${p.progress}%"></div></div>
+                <span style="font-size:11px;font-weight:700">${p.progress}%</span></div>` : ''}
+            <div class="wf-meta">
+                <span><i class="fas fa-store"></i> ${p.branch}</span>
+                <span><i class="fas fa-user"></i> ${p.reporter}</span>
+                <span><i class="fas fa-clock"></i> ${p.time}</span>
+                <span><i class="fas fa-comment"></i> ${p.comments}</span>
+                <span><i class="fas fa-camera"></i> ${p.photos}</span>
+            </div>
+        </div>`).join('');
+}
+
+function getProblemsAdmin() {
+    return `
     <div style="margin-bottom:16px;display:flex;gap:10px">
         <button class="btn btn-danger" onclick="showReportProblem()"><i class="fas fa-plus"></i> แจ้งปัญหาใหม่</button>
     </div>

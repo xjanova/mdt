@@ -4,6 +4,8 @@ function renderAttendance(role) {
     if (role === 'seller' || role === 'employee') {
         c.innerHTML = getAttendanceClockIn();
         initGPSClockIn();
+    } else if (role === 'hr') {
+        c.innerHTML = getAttendanceHR();
     } else {
         c.innerHTML = getAttendanceAdmin();
     }
@@ -177,6 +179,67 @@ function retakePhoto() {
     document.getElementById('btnRetake').style.display = 'none';
     document.getElementById('btnCapturePhoto').style.display = 'inline-flex';
     startCamera();
+}
+
+function getAttendanceHR() {
+    return `
+    <div class="stats-grid" style="grid-template-columns:repeat(5,1fr)">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--primary)"><i class="fas fa-users"></i></div>
+            <div><div class="stat-value">48</div><div class="stat-label">พนักงานทั้งหมด</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--success)"><i class="fas fa-user-check"></i></div>
+            <div><div class="stat-value">42</div><div class="stat-label">มาทำงาน</div><div class="stat-change up">87.5%</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--warning)"><i class="fas fa-user-clock"></i></div>
+            <div><div class="stat-value">3</div><div class="stat-label">มาสาย</div><div class="stat-change down">6.25%</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-bed"></i></div>
+            <div><div class="stat-value">2</div><div class="stat-label">ลา</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--danger)"><i class="fas fa-user-xmark"></i></div>
+            <div><div class="stat-value">1</div><div class="stat-label">ขาด</div></div></div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-chart-pie" style="color:var(--primary);margin-right:6px"></i> อัตราการมาทำงานรายเดือน</h3></div>
+            <div class="card-body">
+                <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>ม.ค. 2569</span><strong>94.2%</strong></div><div class="progress" style="margin-top:4px"><div class="progress-bar green" style="width:94%"></div></div></div>
+                <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>ธ.ค. 2568</span><strong>91.8%</strong></div><div class="progress" style="margin-top:4px"><div class="progress-bar green" style="width:92%"></div></div></div>
+                <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>พ.ย. 2568</span><strong>89.5%</strong></div><div class="progress" style="margin-top:4px"><div class="progress-bar blue" style="width:90%"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;font-size:13px"><span>ต.ค. 2568</span><strong>92.1%</strong></div><div class="progress" style="margin-top:4px"><div class="progress-bar green" style="width:92%"></div></div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-clock" style="color:var(--warning);margin-right:6px"></i> OT รวมเดือนนี้</h3>
+                <button class="btn btn-sm btn-outline" onclick="showToast('Export Excel')"><i class="fas fa-file-excel"></i> Export</button></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>สาขา</th><th>พนักงาน</th><th>OT (ชม.)</th><th>ค่า OT</th></tr></thead>
+                    <tbody>
+                        <tr><td>HomePro เอกมัย</td><td>5</td><td>42</td><td>${fmtMoney(6300)}</td></tr>
+                        <tr><td>DoHome บางบัวทอง</td><td>3</td><td>28</td><td>${fmtMoney(4200)}</td></tr>
+                        <tr><td>BnB พระราม2</td><td>2</td><td>18</td><td>${fmtMoney(2700)}</td></tr>
+                        <tr><td>HomePro พัทยา</td><td>2</td><td>12</td><td>${fmtMoney(1800)}</td></tr>
+                    </tbody>
+                </table>
+                <div style="margin-top:12px;padding:10px;background:var(--gray-50);border-radius:8px;display:flex;justify-content:space-between;font-size:13px;font-weight:600">
+                    <span>รวม OT ทั้งหมด</span>
+                    <span>100 ชม. = ${fmtMoney(15000)}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-user-clock" style="color:var(--danger);margin-right:6px"></i> พนักงานมาสายบ่อย (เดือนนี้)</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>พนักงาน</th><th>สาขา</th><th>จำนวนครั้ง</th><th>เฉลี่ยสาย (นาที)</th><th>สถานะ</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>วิชัย มั่นคง</strong></td><td>MegaHome รังสิต</td><td>4</td><td>25</td><td><span class="tag tag-danger">ต้องเตือน</span></td></tr>
+                    <tr><td><strong>สมชาย ใจดี</strong></td><td>DoHome บางบัวทอง</td><td>2</td><td>15</td><td><span class="tag tag-warning">ติดตาม</span></td></tr>
+                    <tr><td><strong>จรัญ ทำดี</strong></td><td>HomePro พัทยา</td><td>1</td><td>10</td><td><span class="tag tag-gray">ปกติ</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>`;
 }
 
 function getAttendanceAdmin() {

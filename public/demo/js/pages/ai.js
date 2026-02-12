@@ -1,25 +1,63 @@
-/* AI Assistant Page - Real Grok API Integration */
+/* AI Assistant Page - Multi-Provider: Google Gemini (Free) + Grok */
 
 let aiChatHistory = [];
 let aiApiKey = '';
-let aiModel = 'grok-3';
+let aiModel = 'gemini-2.0-flash';
+let aiProvider = 'gemini'; // 'gemini' or 'grok'
+
+const AI_PROVIDERS = {
+    gemini: {
+        name: 'Google Gemini',
+        icon: 'fa-google',
+        color: '#4285f4',
+        models: [
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (แนะนำ - ฟรี)', free: true },
+            { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite (เร็วสุด - ฟรี)', free: true },
+            { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (ฟรี)', free: true },
+            { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (ฟรี จำกัดโควต้า)', free: true },
+        ],
+        getUrl: (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        keyPlaceholder: 'AIzaSy...',
+        keyLink: 'https://aistudio.google.com/apikey',
+        keyLabel: 'Google AI Studio',
+    },
+    grok: {
+        name: 'Grok (xAI)',
+        icon: 'fa-bolt',
+        color: '#1da1f2',
+        models: [
+            { id: 'grok-3', name: 'Grok 3 (ต้องซื้อ Credits)', free: false },
+            { id: 'grok-3-mini', name: 'Grok 3 Mini (เร็วกว่า)', free: false },
+            { id: 'grok-2', name: 'Grok 2', free: false },
+        ],
+        getUrl: () => 'https://api.x.ai/v1/chat/completions',
+        keyPlaceholder: 'xai-xxxxxxxxxxxxxxxxxxxxxxxx',
+        keyLink: 'https://console.x.ai',
+        keyLabel: 'xAI Console',
+    },
+};
 
 function renderAI(role) {
     const c = document.getElementById('contentArea');
-    aiApiKey = loadData('grok_api_key', '');
-    aiModel = loadData('grok_model', 'grok-3');
+    aiProvider = loadData('ai_provider', 'gemini');
+    aiApiKey = loadData('ai_api_key_' + aiProvider, '');
+    aiModel = loadData('ai_model', aiProvider === 'gemini' ? 'gemini-2.0-flash' : 'grok-3');
     aiChatHistory = loadData('ai_chat_history', []);
+
+    const prov = AI_PROVIDERS[aiProvider];
+    const providerLabel = prov.name;
+    const freeTag = aiProvider === 'gemini' ? '<span class="tag tag-success" style="font-size:10px;padding:1px 6px;margin-left:4px"><i class="fas fa-gift"></i> ฟรี</span>' : '';
 
     c.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - 180px);min-height:500px">
         <!-- Chat Area -->
         <div class="card" style="display:flex;flex-direction:column;margin-bottom:0">
             <div class="card-header" style="flex-shrink:0">
-                <h3><i class="fas fa-robot" style="color:var(--primary);margin-right:6px"></i> AI ผู้ช่วยอัจฉริยะ (Grok)</h3>
-                <div style="display:flex;gap:6px">
+                <h3><i class="fas fa-robot" style="color:var(--primary);margin-right:6px"></i> AI ผู้ช่วยอัจฉริยะ ${freeTag}</h3>
+                <div style="display:flex;gap:6px;align-items:center">
                     <span class="tag ${aiApiKey ? 'tag-success' : 'tag-danger'}" id="aiConnectionStatus">
                         <i class="fas fa-${aiApiKey ? 'circle-check' : 'circle-xmark'}"></i>
-                        ${aiApiKey ? 'เชื่อมต่อแล้ว' : 'ยังไม่ตั้งค่า'}
+                        ${aiApiKey ? providerLabel : 'ยังไม่ตั้งค่า'}
                     </span>
                     <button class="btn btn-sm btn-outline" onclick="showAISettings()"><i class="fas fa-gear"></i></button>
                     <button class="btn btn-sm btn-outline" onclick="clearAIChat()" title="ล้างการสนทนา"><i class="fas fa-eraser"></i></button>
@@ -55,7 +93,8 @@ function renderAI(role) {
                     <div style="font-size:12px;color:var(--gray-600)">
                         <p style="margin-bottom:6px"><i class="fas fa-user" style="width:16px"></i> บทบาท: <strong>${ROLE_NAMES[role].name}</strong></p>
                         <p style="margin-bottom:6px"><i class="fas fa-store" style="width:16px"></i> ข้อมูล: สยามพลาสวูด (UPVC/WPC)</p>
-                        <p style="margin-bottom:6px"><i class="fas fa-microchip" style="width:16px"></i> โมเดล: <strong id="aiModelDisplay">${aiModel}</strong></p>
+                        <p style="margin-bottom:6px"><i class="fas fa-microchip" style="width:16px"></i> Provider: <strong id="aiProviderDisplay">${providerLabel}</strong></p>
+                        <p style="margin-bottom:6px"><i class="fas fa-cube" style="width:16px"></i> โมเดล: <strong id="aiModelDisplay">${aiModel}</strong></p>
                         <p><i class="fas fa-database" style="width:16px"></i> มีข้อมูล: ยอดขาย, สต๊อก, สาขา</p>
                     </div>
                 </div>
@@ -162,7 +201,7 @@ function renderAIChatMessages() {
             <p style="color:var(--gray-400);font-size:13px;max-width:400px;margin:0 auto">
                 ผมช่วยวิเคราะห์ข้อมูลยอดขาย, สต๊อก, แนะนำกลยุทธ์การขาย
                 และตอบคำถามเกี่ยวกับสินค้าสยามพลาสวูดได้<br><br>
-                ${!aiApiKey ? '<span style="color:var(--warning)"><i class="fas fa-exclamation-triangle"></i> กรุณาตั้งค่า API Key ก่อนเริ่มใช้งาน</span>' : 'พิมพ์คำถามหรือเลือกคำถามด้านขวาได้เลยครับ'}
+                ${!aiApiKey ? '<span style="color:var(--warning)"><i class="fas fa-exclamation-triangle"></i> กรุณาตั้งค่า API Key ก่อนเริ่มใช้งาน</span><br><span style="font-size:12px;color:var(--success)"><i class="fas fa-gift"></i> แนะนำ Google Gemini (ฟรี!) กดไอคอนเกียร์ด้านบน</span>' : 'พิมพ์คำถามหรือเลือกคำถามด้านขวาได้เลยครับ'}
             </p>
         </div>`;
     }
@@ -206,7 +245,6 @@ function escapeHtml(text) {
 }
 
 function formatAIResponse(text) {
-    // Convert markdown-like formatting
     let html = escapeHtml(text);
     // Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -233,7 +271,7 @@ async function sendAIMessage() {
     // Check API key
     if (!aiApiKey) {
         showAISettings();
-        showToast('กรุณาตั้งค่า Grok API Key ก่อน');
+        showToast('กรุณาตั้งค่า API Key ก่อน');
         return;
     }
 
@@ -262,41 +300,15 @@ async function sendAIMessage() {
     document.getElementById('aiSendBtn').disabled = true;
 
     try {
-        const systemPrompt = getSystemPrompt();
-        const messages = [
-            { role: 'system', content: systemPrompt },
-            ...aiChatHistory.filter(m => m.role !== 'error').slice(-20).map(m => ({
-                role: m.role,
-                content: m.content
-            }))
-        ];
-
-        const response = await fetch('https://api.x.ai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${aiApiKey}`
-            },
-            body: JSON.stringify({
-                model: aiModel,
-                messages: messages,
-                temperature: 0.7,
-                max_tokens: 2048,
-            })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || `API Error: ${response.status} ${response.statusText}`);
+        let reply;
+        if (aiProvider === 'gemini') {
+            reply = await callGeminiAPI(message);
+        } else {
+            reply = await callGrokAPI(message);
         }
-
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content || 'ไม่ได้รับการตอบกลับ';
-
         aiChatHistory.push({ role: 'assistant', content: reply });
-
     } catch (err) {
-        console.error('Grok API Error:', err);
+        console.error('AI API Error:', err);
         aiChatHistory.push({
             role: 'error',
             content: `เกิดข้อผิดพลาด: ${err.message}`
@@ -312,6 +324,87 @@ async function sendAIMessage() {
     document.getElementById('aiSendBtn').disabled = false;
     document.getElementById('aiMsgCount').textContent = aiChatHistory.length;
     document.getElementById('aiTokenCount').textContent = estimateTokens();
+}
+
+async function callGeminiAPI(message) {
+    const systemPrompt = getSystemPrompt();
+    const prov = AI_PROVIDERS.gemini;
+    const url = prov.getUrl(aiModel) + '?key=' + aiApiKey;
+
+    // Build Gemini conversation format
+    const contents = [];
+
+    // Add system instruction as first user/model pair context
+    const history = aiChatHistory.filter(m => m.role !== 'error').slice(-20);
+
+    // Map chat history to Gemini format
+    history.forEach(m => {
+        contents.push({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.content }]
+        });
+    });
+
+    const body = {
+        contents: contents,
+        systemInstruction: {
+            parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+        }
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData.error?.message || `API Error: ${response.status}`;
+        throw new Error(errMsg);
+    }
+
+    const data = await response.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'ไม่ได้รับการตอบกลับ';
+    return reply;
+}
+
+async function callGrokAPI(message) {
+    const systemPrompt = getSystemPrompt();
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...aiChatHistory.filter(m => m.role !== 'error').slice(-20).map(m => ({
+            role: m.role,
+            content: m.content
+        }))
+    ];
+
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${aiApiKey}`
+        },
+        body: JSON.stringify({
+            model: aiModel,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 2048,
+        })
+    });
+
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `API Error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || 'ไม่ได้รับการตอบกลับ';
+    return reply;
 }
 
 function getSystemPrompt() {
@@ -339,55 +432,141 @@ function getSystemPrompt() {
 }
 
 function showAISettings() {
+    const prov = AI_PROVIDERS[aiProvider];
     const currentKey = aiApiKey ? (aiApiKey.substring(0, 8) + '...' + aiApiKey.substring(aiApiKey.length - 4)) : '';
-    showModal('ตั้งค่า AI (Grok)', `
+
+    showModal('ตั้งค่า AI Assistant', `
+        <!-- Provider Selection -->
         <div class="form-group">
-            <label class="form-label">Grok API Key *</label>
+            <label class="form-label">เลือก AI Provider</label>
+            <div style="display:flex;gap:10px;margin-top:6px">
+                <label style="flex:1;cursor:pointer">
+                    <input type="radio" name="aiProviderRadio" value="gemini" ${aiProvider === 'gemini' ? 'checked' : ''} onchange="onProviderChange(this.value)" style="display:none">
+                    <div id="provCard_gemini" style="padding:12px;border:2px solid ${aiProvider === 'gemini' ? '#4285f4' : 'var(--gray-200)'};border-radius:10px;text-align:center;transition:all .2s;${aiProvider === 'gemini' ? 'background:#eef4ff;' : ''}">
+                        <i class="fab fa-google" style="font-size:20px;color:#4285f4;margin-bottom:4px"></i>
+                        <div style="font-weight:700;font-size:13px">Google Gemini</div>
+                        <span class="tag tag-success" style="font-size:9px;padding:1px 6px;margin-top:4px"><i class="fas fa-gift"></i> ฟรี!</span>
+                    </div>
+                </label>
+                <label style="flex:1;cursor:pointer">
+                    <input type="radio" name="aiProviderRadio" value="grok" ${aiProvider === 'grok' ? 'checked' : ''} onchange="onProviderChange(this.value)" style="display:none">
+                    <div id="provCard_grok" style="padding:12px;border:2px solid ${aiProvider === 'grok' ? '#1da1f2' : 'var(--gray-200)'};border-radius:10px;text-align:center;transition:all .2s;${aiProvider === 'grok' ? 'background:#e8f5fe;' : ''}">
+                        <i class="fas fa-bolt" style="font-size:20px;color:#1da1f2;margin-bottom:4px"></i>
+                        <div style="font-weight:700;font-size:13px">Grok (xAI)</div>
+                        <span class="tag tag-warning" style="font-size:9px;padding:1px 6px;margin-top:4px"><i class="fas fa-coins"></i> ต้องซื้อ Credits</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- API Key -->
+        <div class="form-group" id="aiKeyGroup">
+            <label class="form-label" id="aiKeyLabel">${prov.name} API Key *</label>
             <input type="password" class="form-control" id="aiApiKeyInput" value="${aiApiKey}"
-                placeholder="xai-xxxxxxxxxxxxxxxxxxxxxxxx">
-            <p style="font-size:11px;color:var(--gray-400);margin-top:4px">
-                รับ API Key ได้ที่ <a href="https://console.x.ai" target="_blank" style="color:var(--primary)">console.x.ai</a>
+                placeholder="${prov.keyPlaceholder}">
+            <p style="font-size:11px;color:var(--gray-400);margin-top:4px" id="aiKeyHint">
+                รับ API Key ได้ที่ <a href="${prov.keyLink}" target="_blank" style="color:var(--primary)" id="aiKeyLink">${prov.keyLabel}</a>
                 ${currentKey ? `<br>Key ปัจจุบัน: <code>${currentKey}</code>` : ''}
             </p>
         </div>
+
+        <!-- Model Selection -->
         <div class="form-group">
             <label class="form-label">โมเดล</label>
             <select class="form-control" id="aiModelSelect">
-                <option value="grok-3" ${aiModel === 'grok-3' ? 'selected' : ''}>Grok 3 (แนะนำ)</option>
-                <option value="grok-3-mini" ${aiModel === 'grok-3-mini' ? 'selected' : ''}>Grok 3 Mini (เร็วกว่า)</option>
-                <option value="grok-2" ${aiModel === 'grok-2' ? 'selected' : ''}>Grok 2</option>
+                ${prov.models.map(m => `<option value="${m.id}" ${aiModel === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
             </select>
         </div>
-        <div style="padding:12px;background:#f0fdf4;border-radius:8px;border-left:4px solid var(--success);margin-top:12px">
-            <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-shield-check"></i> ความปลอดภัย</p>
-            <p style="font-size:11px;color:var(--gray-600)">API Key จะถูกเก็บเฉพาะในเบราว์เซอร์ของคุณ (localStorage) ไม่มีการส่งไปเซิร์ฟเวอร์ใดๆ</p>
+
+        <!-- Info Box -->
+        <div id="aiSettingsInfo" style="padding:12px;background:${aiProvider === 'gemini' ? '#eef4ff' : '#f0fdf4'};border-radius:8px;border-left:4px solid ${aiProvider === 'gemini' ? '#4285f4' : 'var(--success)'};margin-top:12px">
+            ${aiProvider === 'gemini' ? `
+                <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-gift" style="color:#4285f4"></i> Google Gemini ฟรี!</p>
+                <p style="font-size:11px;color:var(--gray-600)">ใช้งานฟรี 15 request/นาที (1,500/วัน) เพียงพอสำหรับ Demo<br>สร้าง API Key ได้ที่ <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#4285f4">Google AI Studio</a></p>
+            ` : `
+                <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-shield-check"></i> ความปลอดภัย</p>
+                <p style="font-size:11px;color:var(--gray-600)">API Key จะถูกเก็บเฉพาะในเบราว์เซอร์ของคุณ (localStorage) ไม่มีการส่งไปเซิร์ฟเวอร์ใดๆ</p>
+            `}
         </div>
     `, `<button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
         <button class="btn btn-success" onclick="saveAISettings()"><i class="fas fa-check"></i> บันทึก</button>`);
 }
 
+function onProviderChange(newProvider) {
+    const prov = AI_PROVIDERS[newProvider];
+    // Update card highlights
+    document.getElementById('provCard_gemini').style.borderColor = newProvider === 'gemini' ? '#4285f4' : 'var(--gray-200)';
+    document.getElementById('provCard_gemini').style.background = newProvider === 'gemini' ? '#eef4ff' : '';
+    document.getElementById('provCard_grok').style.borderColor = newProvider === 'grok' ? '#1da1f2' : 'var(--gray-200)';
+    document.getElementById('provCard_grok').style.background = newProvider === 'grok' ? '#e8f5fe' : '';
+
+    // Update key field
+    document.getElementById('aiKeyLabel').textContent = prov.name + ' API Key *';
+    document.getElementById('aiApiKeyInput').placeholder = prov.keyPlaceholder;
+    const savedKey = loadData('ai_api_key_' + newProvider, '');
+    document.getElementById('aiApiKeyInput').value = savedKey;
+    document.getElementById('aiKeyLink').href = prov.keyLink;
+    document.getElementById('aiKeyLink').textContent = prov.keyLabel;
+
+    // Update models
+    const modelSelect = document.getElementById('aiModelSelect');
+    const savedModel = loadData('ai_model_' + newProvider, prov.models[0].id);
+    modelSelect.innerHTML = prov.models.map(m =>
+        `<option value="${m.id}" ${savedModel === m.id ? 'selected' : ''}>${m.name}</option>`
+    ).join('');
+
+    // Update info box
+    const infoBox = document.getElementById('aiSettingsInfo');
+    if (newProvider === 'gemini') {
+        infoBox.style.background = '#eef4ff';
+        infoBox.style.borderLeftColor = '#4285f4';
+        infoBox.innerHTML = `
+            <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-gift" style="color:#4285f4"></i> Google Gemini ฟรี!</p>
+            <p style="font-size:11px;color:var(--gray-600)">ใช้งานฟรี 15 request/นาที (1,500/วัน) เพียงพอสำหรับ Demo<br>สร้าง API Key ได้ที่ <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#4285f4">Google AI Studio</a></p>`;
+    } else {
+        infoBox.style.background = '#f0fdf4';
+        infoBox.style.borderLeftColor = 'var(--success)';
+        infoBox.innerHTML = `
+            <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-shield-check"></i> ความปลอดภัย</p>
+            <p style="font-size:11px;color:var(--gray-600)">API Key จะถูกเก็บเฉพาะในเบราว์เซอร์ของคุณ (localStorage) ไม่มีการส่งไปเซิร์ฟเวอร์ใดๆ</p>`;
+    }
+}
+
 function saveAISettings() {
     const key = document.getElementById('aiApiKeyInput').value.trim();
     const model = document.getElementById('aiModelSelect').value;
+    const selectedProvider = document.querySelector('input[name="aiProviderRadio"]:checked').value;
 
     if (!key) {
         showToast('กรุณาใส่ API Key');
         return;
     }
 
+    aiProvider = selectedProvider;
     aiApiKey = key;
     aiModel = model;
-    saveData('grok_api_key', aiApiKey);
-    saveData('grok_model', aiModel);
+
+    saveData('ai_provider', aiProvider);
+    saveData('ai_api_key_' + aiProvider, aiApiKey);
+    saveData('ai_model', aiModel);
+    saveData('ai_model_' + aiProvider, aiModel);
+
+    // Also keep backward compat for grok key
+    if (aiProvider === 'grok') {
+        saveData('grok_api_key', aiApiKey);
+        saveData('grok_model', aiModel);
+    }
 
     // Update status
     const statusEl = document.getElementById('aiConnectionStatus');
     if (statusEl) {
         statusEl.className = 'tag tag-success';
-        statusEl.innerHTML = '<i class="fas fa-circle-check"></i> เชื่อมต่อแล้ว';
+        statusEl.innerHTML = '<i class="fas fa-circle-check"></i> ' + AI_PROVIDERS[aiProvider].name;
     }
     const modelEl = document.getElementById('aiModelDisplay');
     if (modelEl) modelEl.textContent = aiModel;
+    const provEl = document.getElementById('aiProviderDisplay');
+    if (provEl) provEl.textContent = AI_PROVIDERS[aiProvider].name;
 
     closeModal();
     showToast('บันทึกการตั้งค่า AI สำเร็จ!');
@@ -416,7 +595,6 @@ function scrollAIChatToBottom() {
 function estimateTokens() {
     let total = 0;
     aiChatHistory.forEach(m => {
-        // Rough estimate: Thai ~1 char per token, English ~4 chars per token
         total += Math.ceil(m.content.length * 0.8);
     });
     return fmtNum(total);

@@ -51,9 +51,19 @@ body {
     padding: 0 16px;
     border-bottom: 2px solid var(--accent);
 }
-.role-bar-brand { color: var(--accent); font-weight:700; font-size:14px; }
+.role-bar-brand { color: var(--accent); font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
 .role-bar-brand i { margin-right:6px; }
+.role-bar-version {
+    font-size:10px; font-weight:600; color:var(--gray-400);
+    background:rgba(255,255,255,0.08); padding:2px 8px;
+    border-radius:10px; border:1px solid rgba(255,255,255,0.1);
+}
 .role-bar-switches { display:flex; align-items:center; gap:6px; }
+.role-bar-license {
+    color:var(--gray-400); font-size:11px; font-weight:600;
+    display:flex; align-items:center; gap:5px; white-space:nowrap;
+}
+.role-bar-license i { color:var(--accent); font-size:10px; }
 .role-bar-label { color:var(--gray-400); font-size:12px; margin-right:4px; }
 .role-btn {
     padding: 4px 12px; border:1px solid var(--gray-600); border-radius:20px;
@@ -111,6 +121,7 @@ body {
 
 .sidebar-footer {
     padding:12px 16px; border-top:1px solid rgba(255,255,255,0.1);
+    flex-shrink:0; overflow:hidden;
 }
 .sidebar-user { display:flex; align-items:center; gap:10px; }
 .user-avatar {
@@ -460,4 +471,6 @@ textarea.form-control { min-height:80px; resize:vertical; }
 @media (max-width:480px) {
     .stats-grid { grid-template-columns:1fr; }
     .role-bar { padding:0 8px; }
+    .role-bar-license { display:none; }
+    .role-bar-version { display:none; }
 }

@@ -3,9 +3,71 @@ function renderHR(role) {
     const c = document.getElementById('contentArea');
     if (role === 'seller' || role === 'employee') {
         c.innerHTML = getHREmployee();
+    } else if (role === 'supervisor') {
+        c.innerHTML = getHRSupervisor();
     } else {
         c.innerHTML = getHRAdmin();
     }
+}
+
+function getHRSupervisor() {
+    return `
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--primary)"><i class="fas fa-users"></i></div><div><div class="stat-value">12</div><div class="stat-label">สมาชิกทีม</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--success)"><i class="fas fa-user-check"></i></div><div><div class="stat-value">10</div><div class="stat-label">ปฏิบัติงาน</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--warning)"><i class="fas fa-calendar-xmark"></i></div><div><div class="stat-value">2</div><div class="stat-label">คำขอลารออนุมัติ</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:var(--info)"><i class="fas fa-clock"></i></div><div><div class="stat-value">38</div><div class="stat-label">OT ทีม (ชม.)</div></div></div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-calendar-check" style="color:var(--warning);margin-right:6px"></i> คำขอลาทีมรออนุมัติ</h3></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>พนักงาน</th><th>ประเภท</th><th>วันที่</th><th>จำนวน</th><th></th></tr></thead>
+                    <tbody>
+                        <tr><td>จรัญ ทำดี</td><td><span class="tag tag-info">ลาป่วย</span></td><td>13-14 ก.พ.</td><td>2 วัน</td>
+                            <td><button class="btn btn-sm btn-success" onclick="showToast('อนุมัติแล้ว')"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="showToast('ปฏิเสธ')"><i class="fas fa-times"></i></button></td></tr>
+                        <tr><td>วิชัย มั่นคง</td><td><span class="tag tag-gray">ลากิจ</span></td><td>20 ก.พ.</td><td>1 วัน</td>
+                            <td><button class="btn btn-sm btn-success" onclick="showToast('อนุมัติแล้ว')"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="showToast('ปฏิเสธ')"><i class="fas fa-times"></i></button></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-calendar" style="color:var(--info);margin-right:6px"></i> ตารางงานทีมสัปดาห์นี้</h3></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>พนักงาน</th><th>จ.</th><th>อ.</th><th>พ.</th><th>พฤ.</th><th>ศ.</th><th>ส.</th><th>อา.</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>พรทิพย์</strong></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td></tr>
+                        <tr><td><strong>จรัญ</strong></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-info" style="padding:2px 6px">L</span></td><td><span class="tag tag-info" style="padding:2px 6px">L</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td></tr>
+                        <tr><td><strong>สุดา</strong></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td></tr>
+                        <tr><td><strong>วิชัย</strong></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-success" style="padding:2px 6px">W</span></td><td><span class="tag tag-gray" style="padding:2px 6px">L</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td><td><span class="tag tag-gray" style="padding:2px 6px">-</span></td></tr>
+                    </tbody>
+                </table>
+                <p style="font-size:11px;color:var(--gray-400);margin-top:8px">W = ทำงาน, L = ลา, - = หยุด</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-users" style="color:var(--primary);margin-right:6px"></i> สมาชิกทีม</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>รหัส</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>สาขา</th><th>สถานะ</th><th>ลาคงเหลือ</th></tr></thead>
+                <tbody>
+                    <tr><td>EMP001</td><td><strong>พรทิพย์ สวยงาม</strong></td><td>PC</td><td>HomePro เอกมัย</td><td><span class="tag tag-success">ปฏิบัติงาน</span></td><td>8 วัน</td></tr>
+                    <tr><td>EMP003</td><td><strong>มานี รักเรียน</strong></td><td>PC</td><td>BnB พระราม2</td><td><span class="tag tag-success">ปฏิบัติงาน</span></td><td>3 วัน</td></tr>
+                    <tr><td>EMP004</td><td><strong>จรัญ ทำดี</strong></td><td>PC</td><td>HomePro พัทยา</td><td><span class="tag tag-info">ลา</span></td><td>10 วัน</td></tr>
+                    <tr><td>EMP005</td><td><strong>สุดา ใจดี</strong></td><td>PC</td><td>DoHome ระยอง</td><td><span class="tag tag-success">ปฏิบัติงาน</span></td><td>12 วัน</td></tr>
+                    <tr><td>EMP006</td><td><strong>วิชัย มั่นคง</strong></td><td>PC</td><td>MegaHome รังสิต</td><td><span class="tag tag-success">ปฏิบัติงาน</span></td><td>6 วัน</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>`;
 }
 
 function getHRAdmin() {

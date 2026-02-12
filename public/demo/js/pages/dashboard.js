@@ -1,8 +1,10 @@
 /* Dashboard Page */
 function renderDashboard(role) {
     const c = document.getElementById('contentArea');
-    if (role === 'admin' || role === 'supervisor') {
+    if (role === 'admin') {
         c.innerHTML = getDashboardAdmin();
+    } else if (role === 'supervisor') {
+        c.innerHTML = getDashboardSupervisor();
     } else if (role === 'seller') {
         c.innerHTML = getDashboardSeller();
     } else if (role === 'hr') {
@@ -163,6 +165,109 @@ function getDashboardAdmin() {
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function getDashboardSupervisor() {
+    return `
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><i class="fas fa-store"></i></div>
+            <div><div class="stat-value">5</div><div class="stat-label">สาขาในความดูแล</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a)"><i class="fas fa-users"></i></div>
+            <div><div class="stat-value">12</div><div class="stat-label">สมาชิกทีม</div><div class="stat-change down"><i class="fas fa-arrow-down"></i> 1 มาสาย</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><i class="fas fa-baht-sign"></i></div>
+            <div><div class="stat-value">2.8M</div><div class="stat-label">ยอดขายทีมเดือนนี้</div><div class="stat-change up"><i class="fas fa-arrow-up"></i> +9.2%</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626)"><i class="fas fa-exclamation-triangle"></i></div>
+            <div><div class="stat-value">3</div><div class="stat-label">ปัญหารอแก้ไข</div><div class="stat-change down"><i class="fas fa-fire"></i> 1 เร่งด่วน</div></div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-users" style="color:var(--primary);margin-right:6px"></i> สมาชิกทีมวันนี้</h3>
+            </div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>ชื่อ</th><th>สาขา</th><th>เวลาเข้า</th><th>สถานะ</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>พรทิพย์ สวยงาม</strong></td><td>HomePro เอกมัย</td><td>08:15</td><td><span class="tag tag-success">ทำงาน</span></td></tr>
+                        <tr><td><strong>มานี รักเรียน</strong></td><td>BnB พระราม2</td><td>08:00</td><td><span class="tag tag-success">ทำงาน</span></td></tr>
+                        <tr><td><strong>จรัญ ทำดี</strong></td><td>HomePro พัทยา</td><td>-</td><td><span class="tag tag-info">ลาป่วย</span></td></tr>
+                        <tr><td><strong>สุดา ใจดี</strong></td><td>DoHome ระยอง</td><td>07:55</td><td><span class="tag tag-success">ทำงาน</span></td></tr>
+                        <tr><td><strong>วิชัย มั่นคง</strong></td><td>MegaHome รังสิต</td><td>09:10</td><td><span class="tag tag-warning">สาย</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-bar" style="color:var(--success);margin-right:6px"></i> ยอดขายทีม (สาขา)</h3>
+            </div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>สาขา</th><th>ยอดขาย</th><th>แนวโน้ม</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>HomePro เอกมัย</strong></td><td style="text-align:right">${fmtMoney(850000)}</td><td><span class="stat-change up">+15%</span></td></tr>
+                        <tr><td><strong>BnB พระราม2</strong></td><td style="text-align:right">${fmtMoney(620000)}</td><td><span class="stat-change up">+5%</span></td></tr>
+                        <tr><td><strong>HomePro พัทยา</strong></td><td style="text-align:right">${fmtMoney(540000)}</td><td><span class="stat-change down">-2%</span></td></tr>
+                        <tr><td><strong>DoHome ระยอง</strong></td><td style="text-align:right">${fmtMoney(480000)}</td><td><span class="stat-change up">+8%</span></td></tr>
+                        <tr><td><strong>MegaHome รังสิต</strong></td><td style="text-align:right">${fmtMoney(310000)}</td><td><span class="stat-change up">+22%</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-diagram-project" style="color:var(--info);margin-right:6px"></i> โฟลงานทีม</h3>
+                <button class="btn btn-sm btn-primary" onclick="loadPage('workflows')"><i class="fas fa-plus"></i> สร้างโฟล</button>
+            </div>
+            <div class="card-body" style="padding:12px">
+                <div class="wf-card type-problem" style="margin-bottom:10px" onclick="loadPage('workflows')">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div class="wf-title">แก้ปัญหาสต๊อกไม่ตรง Mega Bangna</div>
+                        <span class="tag tag-danger">เร่งด่วน</span>
+                    </div>
+                    <div class="wf-desc">มอบหมาย: พรทิพย์ - ความคืบหน้า 30%</div>
+                    <div class="progress" style="margin:8px 0"><div class="progress-bar red" style="width:30%"></div></div>
+                </div>
+                <div class="wf-card type-task" onclick="loadPage('workflows')">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div class="wf-title">ถ่ายรูปตัวโชว์ประตู ANYHOME</div>
+                        <span class="tag tag-gray">ปานกลาง</span>
+                    </div>
+                    <div class="wf-desc">มอบหมาย: จรัญ - ยังไม่เริ่ม</div>
+                    <div class="progress" style="margin:8px 0"><div class="progress-bar amber" style="width:0%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-calendar-check" style="color:var(--warning);margin-right:6px"></i> คำขอลาทีม</h3>
+            </div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>พนักงาน</th><th>ประเภท</th><th>วันที่</th><th>สถานะ</th><th></th></tr></thead>
+                    <tbody>
+                        <tr><td>จรัญ ทำดี</td><td><span class="tag tag-info">ลาป่วย</span></td><td>13-14 ก.พ.</td><td><span class="tag tag-success">อนุมัติแล้ว</span></td><td></td></tr>
+                        <tr><td>วิชัย มั่นคง</td><td><span class="tag tag-gray">ลากิจ</span></td><td>20 ก.พ.</td><td><span class="tag tag-warning">รออนุมัติ</span></td>
+                            <td><button class="btn btn-sm btn-success" onclick="showToast('อนุมัติแล้ว')">อนุมัติ</button></td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>`;
