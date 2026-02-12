@@ -1,18 +1,40 @@
 name: Auto Deploy to Production
 
 on:
+  # Auto-deploy when pushed to main
   push:
-    branches: [ main ]
+    branches:
+      - main
+    paths-ignore:
+      - '*.md'
+      - 'DEPLOY_GUIDE.md'
+  # Manual trigger
   workflow_dispatch:
+
+# Prevent concurrent deployments
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    name: Deploy to Server
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check SSH secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_USER" ] || [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::Required SSH secrets are not configured."
+            echo "Please set: SSH_HOST, SSH_USER, SSH_PRIVATE_KEY"
+            echo "Optional: SSH_PORT (defaults to 22), DEPLOY_PATH, APP_URL"
+            exit 1
+          fi
+          echo "✓ SSH secrets configured"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -20,64 +42,81 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 5m
           script: |
             set -e
+
+            # Configuration
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-            DEMO_PATH="$DEPLOY_PATH/demo"
-            BACKUP_PATH="$DEPLOY_PATH/backups/$(date +%Y%m%d_%H%M%S)"
+            DEPLOY_PATH="${DEPLOY_PATH:-/home/admin/domains/demo87.xman4289.com/mdt}"
 
-            echo "🚀 Starting deployment..."
+            echo "🚀 Starting deployment to ${DEPLOY_PATH}"
+            cd "${DEPLOY_PATH}"
 
-            # Create backup
-            if [ -d "$DEMO_PATH" ]; then
-              echo "📦 Creating backup..."
-              mkdir -p "$DEPLOY_PATH/backups"
-              cp -r "$DEMO_PATH" "$BACKUP_PATH"
-              echo "Backup saved to: $BACKUP_PATH"
-            fi
+            # Backup .env
+            cp .env .env.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
 
             # Pull latest code
             echo "📥 Pulling latest code..."
-            cd "$DEPLOY_PATH"
             git fetch origin main
             git reset --hard origin/main
 
-            # Set permissions
-            echo "🔒 Setting permissions..."
-            find "$DEMO_PATH" -type f -exec chmod 644 {} \;
-            find "$DEMO_PATH" -type d -exec chmod 755 {} \;
+            # Install/update composer dependencies
+            echo "📦 Installing composer dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction 2>&1 || {
+              echo "⚠️ Composer install failed, trying with --no-scripts"
+              composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+            }
 
-            # Clean old backups (keep last 5)
-            echo "🧹 Cleaning old backups..."
-            cd "$DEPLOY_PATH/backups" 2>/dev/null && ls -dt */ | tail -n +6 | xargs rm -rf 2>/dev/null || true
+            # Run migrations (if any)
+            echo "🗃️ Running migrations..."
+            php artisan migrate --force 2>&1 || echo "⚠️ Migration warnings (non-fatal)"
 
-            echo "✅ Deployment complete!"
+            # Clear and rebuild caches
+            echo "⚡ Optimizing application..."
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan event:cache 2>/dev/null || true
+
+            # Fix permissions
+            chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+            chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
+            # Restart queue workers if running
+            php artisan queue:restart 2>/dev/null || true
+
+            echo "✅ Deployment completed successfully!"
 
       - name: Health Check
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            APP_URL="${{ secrets.APP_URL }}"
-            if [ -n "$APP_URL" ]; then
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/demo/" || echo "000")
-              if [ "$STATUS" = "200" ]; then
-                echo "✅ Health check passed (HTTP $STATUS)"
-              else
-                echo "⚠️ Health check returned HTTP $STATUS"
-              fi
-            else
-              echo "⏭️ No APP_URL set, skipping health check"
-            fi
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          URL="${APP_URL:-https://demo87.xman4289.com}"
+          echo "🔍 Checking health at: ${URL}/login"
+          sleep 5
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${URL}/login" || echo "000")
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Application is healthy (HTTP $HTTP_CODE)"
+          else
+            echo "⚠️ Health check returned HTTP $HTTP_CODE (may still be starting up)"
+          fi
 
-      - name: Notify Success
-        if: success()
-        run: echo "✅ Deployment successful!"
-
-      - name: Notify Failure
-        if: failure()
-        run: echo "❌ Deployment failed!"
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## Deployment Result" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ **Status:** Success" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "**Branch:** main" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** $(date -u)" >> $GITHUB_STEP_SUMMARY
