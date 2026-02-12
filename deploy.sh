@@ -815,15 +815,32 @@ fi
 
 # ===== 6. Composer Install =====
 step "Installing Dependencies"
+set +e
 if [ "$APP_ENV" = "production" ]; then
-    run_composer install --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
+    COMPOSER_OUTPUT=$(run_composer install --no-dev --optimize-autoloader --no-interaction 2>&1)
 else
-    run_composer install --optimize-autoloader --no-interaction 2>&1 | tail -5
+    COMPOSER_OUTPUT=$(run_composer install --optimize-autoloader --no-interaction 2>&1)
+fi
+COMPOSER_EXIT=$?
+echo "$COMPOSER_OUTPUT" | tail -5
+set -e
+
+# PHP version mismatch: auto-fix by removing lock and updating
+if [ $COMPOSER_EXIT -ne 0 ] && echo "$COMPOSER_OUTPUT" | grep -q "your php version.*does not satisfy"; then
+    PHP_CURRENT=$("$PHP_BIN" -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION.'.'.PHP_RELEASE_VERSION;")
+    warn "composer.lock ถูกสร้างจาก PHP version อื่น"
+    info "PHP บนเซิร์ฟเวอร์: $PHP_CURRENT - resolving packages ใหม่..."
+    rm -f composer.lock
+    if [ "$APP_ENV" = "production" ]; then
+        run_composer update --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
+    else
+        run_composer update --optimize-autoloader --no-interaction 2>&1 | tail -5
+    fi
 fi
 
 if [ ! -f vendor/autoload.php ]; then
     error "Composer install FAILED - vendor/autoload.php not found!"
-    generate_error_report "composer_install" "vendor/autoload.php missing" ""
+    generate_error_report "composer_install" "vendor/autoload.php missing" "$COMPOSER_OUTPUT"
     echo "  PHP: $PHP_BIN | Composer: $COMPOSER_BIN"
     echo "  ลองรันเอง:"
     if [[ "$COMPOSER_BIN" == *.phar ]]; then

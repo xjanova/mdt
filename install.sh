@@ -263,7 +263,24 @@ fi
 # ===== 3. Install PHP Dependencies =====
 print_step "3/8 - ติดตั้ง PHP Dependencies"
 print_info "Running: composer install (อาจใช้เวลาสักครู่...)"
-run_composer install --optimize-autoloader --no-dev --no-interaction 2>&1 | tail -10
+
+set +e
+COMPOSER_OUTPUT=$(run_composer install --optimize-autoloader --no-dev --no-interaction 2>&1)
+COMPOSER_EXIT=$?
+echo "$COMPOSER_OUTPUT" | tail -10
+set -e
+
+# If failed due to PHP version mismatch, auto-fix by removing lock and updating
+if [ $COMPOSER_EXIT -ne 0 ] && echo "$COMPOSER_OUTPUT" | grep -q "your php version.*does not satisfy"; then
+    echo ""
+    print_warning "composer.lock ถูกสร้างจาก PHP version อื่น"
+    PHP_CURRENT=$("$PHP_BIN" -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION.'.'.PHP_RELEASE_VERSION;")
+    print_info "PHP บนเซิร์ฟเวอร์: $PHP_CURRENT"
+    print_info "กำลัง resolve packages ใหม่ให้ตรงกับ PHP $PHP_CURRENT..."
+    echo ""
+    rm -f composer.lock
+    run_composer update --optimize-autoloader --no-dev --no-interaction 2>&1 | tail -10
+fi
 
 # Verify vendor directory was created
 if [ ! -f vendor/autoload.php ]; then

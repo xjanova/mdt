@@ -141,7 +141,19 @@ echo -e "${GREEN}  ✓${NC} Environment configured"
 
 # Step 2: Composer
 echo -e "${BLUE}[2/8]${NC} ติดตั้ง PHP Dependencies..."
-run_composer install --optimize-autoloader --no-interaction 2>&1 | tail -5
+set +e
+COMPOSER_OUTPUT=$(run_composer install --optimize-autoloader --no-interaction 2>&1)
+COMPOSER_EXIT=$?
+echo "$COMPOSER_OUTPUT" | tail -5
+set -e
+
+# PHP version mismatch: auto-fix by removing lock and updating
+if [ $COMPOSER_EXIT -ne 0 ] && echo "$COMPOSER_OUTPUT" | grep -q "your php version.*does not satisfy"; then
+    PHP_CURRENT=$("$PHP_BIN" -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;")
+    echo -e "${YELLOW}  ⚠${NC} composer.lock ไม่ตรงกับ PHP $PHP_CURRENT - resolving ใหม่..."
+    rm -f composer.lock
+    run_composer update --optimize-autoloader --no-interaction 2>&1 | tail -5
+fi
 
 if [ ! -f vendor/autoload.php ]; then
     echo -e "${RED}  ✗ Composer install FAILED!${NC}"
