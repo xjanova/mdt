@@ -474,3 +474,15 @@ textarea.form-control { min-height:80px; resize:vertical; }
     .role-bar-license { display:none; }
     .role-bar-version { display:none; }
 }
+
+/* ===== DROP ZONE (Import) ===== */
+.drop-zone {
+    border:2px dashed var(--gray-300); border-radius:12px;
+    padding:40px 20px; text-align:center; cursor:pointer;
+    transition:all .2s; background:var(--gray-50);
+}
+.drop-zone:hover { border-color:var(--primary); background:#eef4ff; }
+.drop-zone.dragover {
+    border-color:var(--primary); background:#dbeafe;
+    box-shadow:0 0 0 4px rgba(59,130,246,0.15);
+}

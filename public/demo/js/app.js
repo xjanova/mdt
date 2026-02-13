@@ -23,6 +23,7 @@ const MENUS = {
             { id:'hr', icon:'fa-people-group', label:'HR / ลา / ตารางงาน' },
         ]},
         { group: 'ข้อมูล', items: [
+            { id:'products', icon:'fa-box-open', label:'สินค้า/สต๊อก' },
             { id:'import', icon:'fa-file-import', label:'นำเข้าข้อมูล' },
             { id:'ai', icon:'fa-robot', label:'AI ผู้ช่วย' },
         ]},
@@ -47,6 +48,7 @@ const MENUS = {
             { id:'hr', icon:'fa-people-group', label:'จัดการทีม / ลา' },
         ]},
         { group: 'เครื่องมือ', items: [
+            { id:'products', icon:'fa-box-open', label:'สินค้า/สต๊อก' },
             { id:'import', icon:'fa-file-import', label:'นำเข้าข้อมูล' },
             { id:'ai', icon:'fa-robot', label:'AI ผู้ช่วย' },
         ]},
@@ -152,7 +154,7 @@ function loadPage(pageId) {
         dashboard:'แดชบอร์ด', attendance:'ลงเวลางาน/OT', sales:'รายงานการขาย',
         workflows:'โฟลงาน/มอบหมาย', problems:'ติดตามปัญหา', branches:'สาขา',
         communications:'ศูนย์สื่อสาร', hr:'HR / บุคลากร', import:'นำเข้าข้อมูล',
-        ai:'AI ผู้ช่วยอัจฉริยะ', users:'จัดการผู้ใช้/สิทธิ์', settings:'ตั้งค่าระบบ'
+        products:'สินค้า/สต๊อก', ai:'AI ผู้ช่วยอัจฉริยะ', users:'จัดการผู้ใช้/สิทธิ์', settings:'ตั้งค่าระบบ'
     };
     document.getElementById('pageTitle').textContent = titles[pageId] || pageId;
     // Call page renderer
@@ -166,6 +168,7 @@ function loadPage(pageId) {
         communications: renderCommunications,
         hr: renderHR,
         import: renderImport,
+        products: renderProducts,
         ai: renderAI,
         users: renderUsers,
         settings: renderSettings,

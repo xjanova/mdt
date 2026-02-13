@@ -462,6 +462,113 @@ async function callGrokAPI(message) {
 }
 
 function getMDTData(role) {
+    // Try to use imported data first
+    const imported = loadData('imported_data', null);
+    if (imported && imported.stock && imported.stock.length > 0) {
+        return buildDataFromImport(imported, role);
+    }
+    // Fallback to demo data
+    return getDemoMDTData(role);
+}
+
+function buildDataFromImport(imported, role) {
+    const data = {};
+    const stock = imported.stock || [];
+    const sales = imported.sales || [];
+    const products = imported.products || [];
+
+    // Summarize by store
+    const storeMap = {};
+    stock.forEach(s => {
+        const store = s.store || 'ไม่ระบุ';
+        if (!storeMap[store]) storeMap[store] = { name: store, totalQty: 0, totalSold: 0, branches: new Set() };
+        storeMap[store].totalQty += (s.qty || 0);
+        storeMap[store].totalSold += (s.sold || 0);
+        if (s.branch) storeMap[store].branches.add(s.branch);
+    });
+
+    // Sales summary
+    const totalSold = stock.reduce((s, r) => s + (r.sold || 0), 0);
+    const totalAmount = sales.reduce((s, r) => s + (r.amount || 0), 0);
+    data.sales = {
+        total: totalAmount || totalSold * 1790,
+        totalItems: totalSold,
+        totalBills: Math.ceil(totalSold / 3),
+        growth: 'N/A (ข้อมูลจาก Excel)',
+        byMall: Object.values(storeMap).map(s => ({
+            name: s.name, sales: s.totalSold * 1790, pct: '', trend: ''
+        })),
+        byCategory: [],
+        topProducts: [],
+    };
+
+    // Category summary
+    const catMap = {};
+    stock.forEach(r => {
+        const cat = r.category || (r.name ? detectCategory(r.name) : 'อื่นๆ');
+        if (!catMap[cat]) catMap[cat] = { qty: 0, sold: 0 };
+        catMap[cat].qty += (r.qty || 0);
+        catMap[cat].sold += (r.sold || 0);
+    });
+    data.sales.byCategory = Object.entries(catMap).map(([name, v]) => ({ name, sales: v.sold * 1790, qty: v.sold }));
+
+    // Top products
+    const prodSales = {};
+    stock.forEach(r => {
+        const key = r.artno || r.name;
+        if (!prodSales[key]) prodSales[key] = { name: r.name || key, qty: 0 };
+        prodSales[key].qty += (r.sold || 0);
+    });
+    data.sales.topProducts = Object.values(prodSales).sort((a, b) => b.qty - a.qty).slice(0, 5)
+        .map(p => ({ name: p.name, qty: p.qty, sales: p.qty * 1790 }));
+
+    // Branches
+    const branchMap = {};
+    stock.forEach(r => {
+        const b = r.branch || 'ไม่ระบุ';
+        if (!branchMap[b]) branchMap[b] = { name: b, store: r.store || '', qty: 0, sold: 0 };
+        branchMap[b].qty += (r.qty || 0);
+        branchMap[b].sold += (r.sold || 0);
+    });
+    data.branches = {
+        total: Object.keys(branchMap).length,
+        newThisMonth: 0,
+        list: Object.values(branchMap).map(b => ({
+            name: b.name, store: b.store, region: '', emp: 0, sales: b.sold * 1790, problems: 0
+        })),
+    };
+
+    // Stock alerts
+    const nonMoving = stock.filter(r => r.nonMoveDay > 90);
+    const belowMin = stock.filter(r => r.qty > 0 && r.min > 0 && r.qty < r.min);
+    const noDisplay = stock.filter(r => !r.display);
+    const deadStock = stock.filter(r => r.qty > 0 && (r.sold || 0) === 0);
+
+    data.stock = {
+        nonMoving: { count: nonMoving.length, items: nonMoving.slice(0, 5).map(r => `${r.name} (${r.branch}) - ${r.nonMoveDay} วัน`) },
+        belowMin: { count: belowMin.length, items: belowMin.slice(0, 5).map(r => `${r.name} (${r.branch}) - เหลือ ${r.qty}, Min ${r.min}`) },
+        noDisplay: { count: noDisplay.length, items: noDisplay.slice(0, 5).map(r => `${r.name} (${r.branch})`) },
+        priceMismatch: { count: 0, items: [] },
+    };
+
+    // Employees (keep demo data)
+    data.employees = getDemoMDTData(role).employees;
+    data.problems = getDemoMDTData(role).problems;
+
+    // Add imported data summary
+    data._importInfo = {
+        source: 'Excel Import',
+        lastImport: imported.lastImport,
+        totalProducts: products.length,
+        totalStockRows: stock.length,
+        totalSalesRows: sales.length,
+        files: (imported.files || []).map(f => f.name).join(', '),
+    };
+
+    return data;
+}
+
+function getDemoMDTData(role) {
     const data = {};
 
     // === ยอดขาย ===
@@ -623,6 +730,15 @@ function formatMDTDataForAI(role) {
     text += `\n=== ปัญหารอแก้ไข ===\n`;
     text += `ทั้งหมด: ${d.problems.total} เรื่อง (เร่งด่วน: ${d.problems.urgent}, เปิดใหม่: ${d.problems.open}, กำลังแก้: ${d.problems.inProgress})\n`;
     d.problems.list.forEach(p => { text += `  - [${p.severity}] ${p.title} @ ${p.branch} (${p.status})\n`; });
+
+    // Import info
+    if (d._importInfo) {
+        text += `\n=== แหล่งข้อมูล ===\n`;
+        text += `ข้อมูลจาก: ${d._importInfo.source}\n`;
+        text += `อัพเดทล่าสุด: ${d._importInfo.lastImport}\n`;
+        text += `ไฟล์: ${d._importInfo.files}\n`;
+        text += `สินค้า: ${d._importInfo.totalProducts} รายการ, สต๊อก: ${d._importInfo.totalStockRows} แถว\n`;
+    }
 
     return text;
 }
