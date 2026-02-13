@@ -161,35 +161,89 @@ function getAIQuickActions(role) {
 }
 
 function getAIPromptTemplates(role) {
-    const templates = [
-        { cat: 'การขาย', items: [
-            'สินค้าขายดีสุด 10 อันดับแรกเดือนนี้',
-            'เปรียบเทียบยอดขายระหว่าง HomePro กับ DoHome',
-            'สินค้าที่ขายไม่ออก (Non Moving) ควรทำอย่างไร',
-            'วิเคราะห์ฤดูกาลของยอดขายประตู',
-        ]},
-        { cat: 'สต๊อก', items: [
-            'สินค้าที่ต้องสั่งเพิ่มด่วน (ต่ำกว่า Min)',
-            'สรุป Coverage Day ของสินค้าหลัก',
-            'สินค้าที่ไม่มีตัวโชว์ในสาขาไหนบ้าง',
-        ]},
-        { cat: 'กลยุทธ์', items: [
-            'แนะนำแผนการตลาดเพิ่มยอดขายสาขาที่ตกเป้า',
-            'วิเคราะห์โอกาสเปิดสาขาใหม่ในห้างไหน',
-            'เปรียบเทียบจุดแข็ง/จุดอ่อน ประตู UPVC กับไม้จริง',
-        ]},
-    ];
-    return templates.map(t => `
-        <div style="margin-bottom:8px">
-            <div style="font-size:11px;font-weight:700;color:var(--gray-400);margin-bottom:4px">${t.cat}</div>
+    const allTemplates = {
+        sales: {
+            icon: 'fa-chart-bar', label: 'ยอดขาย', color: 'var(--primary)',
+            items: [
+                { q: 'สรุปยอดขายรวมเดือนนี้ แยกตามห้าง', icon: 'fa-store' },
+                { q: 'ห้างไหนยอดขายดีที่สุด และห้างไหนต้องปรับปรุง', icon: 'fa-trophy' },
+                { q: 'สินค้าขายดีสุด 5 อันดับแรก คืออะไร', icon: 'fa-fire' },
+                { q: 'เปรียบเทียบยอดขายตามหมวดสินค้า', icon: 'fa-layer-group' },
+                { q: 'วิเคราะห์แนวโน้มยอดขาย เทียบเดือนก่อน', icon: 'fa-chart-line' },
+            ]
+        },
+        stock: {
+            icon: 'fa-boxes-stacked', label: 'สต๊อก', color: 'var(--warning)',
+            items: [
+                { q: 'สินค้าไม่เคลื่อนไหว (Non-Moving) มีกี่รายการ อะไรบ้าง', icon: 'fa-ban' },
+                { q: 'สินค้าที่ต่ำกว่า Min Stock ต้องสั่งเพิ่มเร่งด่วน', icon: 'fa-arrow-down' },
+                { q: 'สินค้าที่ไม่มีตัวโชว์มีอะไรบ้าง', icon: 'fa-eye-slash' },
+                { q: 'สินค้าที่ราคาไม่ตรงกับระบบ มีอะไรบ้าง', icon: 'fa-tags' },
+            ]
+        },
+        branch: {
+            icon: 'fa-store', label: 'สาขา', color: 'var(--success)',
+            items: [
+                { q: 'สรุปภาพรวมสาขาทั้งหมด สาขาไหนทำยอดได้ดี', icon: 'fa-ranking-star' },
+                { q: 'สาขาไหนมีปัญหาค้างมากที่สุด', icon: 'fa-triangle-exclamation' },
+                { q: 'เปรียบเทียบจำนวนพนักงานและยอดขายแต่ละสาขา', icon: 'fa-scale-balanced' },
+            ]
+        },
+        hr: {
+            icon: 'fa-users', label: 'พนักงาน', color: 'var(--info)',
+            items: [
+                { q: 'สรุปสถานะพนักงานวันนี้ ใครมาสาย ใครลา', icon: 'fa-user-clock' },
+                { q: 'พนักงานขายคนไหนทำยอดได้ดีที่สุด', icon: 'fa-medal' },
+                { q: 'สรุป OT ของพนักงานเดือนนี้', icon: 'fa-clock' },
+                { q: 'พนักงานที่มาสายบ่อย มีใครบ้าง', icon: 'fa-user-xmark' },
+            ]
+        },
+        problems: {
+            icon: 'fa-triangle-exclamation', label: 'ปัญหา', color: 'var(--danger)',
+            items: [
+                { q: 'ปัญหาเร่งด่วนที่ยังไม่ได้แก้ไข มีอะไรบ้าง', icon: 'fa-fire' },
+                { q: 'สรุปปัญหาทั้งหมดแยกตามสถานะ', icon: 'fa-list-check' },
+            ]
+        },
+        strategy: {
+            icon: 'fa-lightbulb', label: 'กลยุทธ์', color: 'var(--accent)',
+            items: [
+                { q: 'แนะนำวิธีเพิ่มยอดขายสาขาที่ตกเป้า', icon: 'fa-bullseye' },
+                { q: 'วิเคราะห์จุดแข็ง/จุดอ่อน ประตู UPVC เทียบคู่แข่ง', icon: 'fa-scale-balanced' },
+                { q: 'แนะนำแผนลดสินค้าไม่เคลื่อนไหว (Non-Moving)', icon: 'fa-recycle' },
+            ]
+        },
+    };
+
+    // Filter categories by role
+    let cats;
+    if (role === 'seller' || role === 'employee') {
+        cats = ['sales', 'stock', 'strategy'];
+    } else if (role === 'hr') {
+        cats = ['hr', 'sales'];
+    } else if (role === 'supervisor') {
+        cats = ['sales', 'stock', 'hr', 'branch', 'strategy'];
+    } else {
+        cats = ['sales', 'stock', 'branch', 'hr', 'problems', 'strategy'];
+    }
+
+    return cats.map(catKey => {
+        const t = allTemplates[catKey];
+        return `
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;font-weight:700;color:${t.color};margin-bottom:6px;display:flex;align-items:center;gap:4px">
+                <i class="fas ${t.icon}" style="font-size:10px"></i> ${t.label}
+            </div>
             ${t.items.map(item => `
-                <div style="padding:6px 8px;font-size:12px;cursor:pointer;border-radius:6px;margin-bottom:2px;color:var(--gray-600);transition:background .15s"
-                    onmouseover="this.style.background='var(--gray-100)'"
-                    onmouseout="this.style.background=''"
-                    onclick="useQuickAction('${item.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-chevron-right" style="font-size:9px;margin-right:4px;color:var(--gray-400)"></i> ${item}
+                <div style="padding:7px 10px;font-size:12px;cursor:pointer;border-radius:8px;margin-bottom:3px;color:var(--gray-700);transition:all .15s;border:1px solid transparent;display:flex;align-items:center;gap:6px"
+                    onmouseover="this.style.background='var(--gray-100)';this.style.borderColor='var(--gray-200)'"
+                    onmouseout="this.style.background='';this.style.borderColor='transparent'"
+                    onclick="useQuickAction('${item.q.replace(/'/g, "\\'")}')">
+                    <i class="fas ${item.icon}" style="font-size:10px;color:${t.color};flex-shrink:0;width:14px;text-align:center"></i>
+                    <span>${item.q}</span>
                 </div>`).join('')}
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 function renderAIChatMessages() {
@@ -407,28 +461,204 @@ async function callGrokAPI(message) {
     return reply;
 }
 
+function getMDTData(role) {
+    const data = {};
+
+    // === ยอดขาย ===
+    data.sales = {
+        total: 8500000,
+        totalItems: 1245,
+        totalBills: 386,
+        growth: '+12.5%',
+        byMall: [
+            { name: 'HomePro', sales: 3250000, pct: '38%', trend: '+15%' },
+            { name: 'DoHome', sales: 2800000, pct: '33%', trend: '+8%' },
+            { name: 'BnB Home (BTV)', sales: 1650000, pct: '19%', trend: '-3%' },
+            { name: 'MegaHome', sales: 800000, pct: '10%', trend: '+22%' },
+        ],
+        byCategory: [
+            { name: 'ประตูภายใน UPVC', sales: 3200000, qty: 480 },
+            { name: 'ประตูห้องน้ำ PVC', sales: 2100000, qty: 350 },
+            { name: 'วงกบ WPC/UPVC', sales: 1500000, qty: 280 },
+            { name: 'ประตูภายนอก UPVC', sales: 1200000, qty: 95 },
+            { name: 'Deck/ไม้ระแนง', sales: 500000, qty: 40 },
+        ],
+        topProducts: [
+            { name: 'ประตูห้องน้ำ PVC AZLE BW', qty: 180, sales: 214200 },
+            { name: 'ประตู UPVC AZLE BN-01 70x200', qty: 95, sales: 170050 },
+            { name: 'วงกบ WPC AZLE 80x200', qty: 120, sales: 178800 },
+            { name: 'ประตูภายนอก UPVC L-35', qty: 45, sales: 175050 },
+            { name: 'ประตู UPVC EXTERA EX-01', qty: 60, sales: 119400 },
+        ],
+    };
+
+    // === สาขา ===
+    data.branches = {
+        total: 18,
+        newThisMonth: 2,
+        list: [
+            { name: 'HomePro เอกมัย-รามอินทรา', store: 'HomePro', region: 'กลาง', emp: 3, sales: 891000, problems: 1 },
+            { name: 'HomePro พัทยา', store: 'HomePro', region: 'ตะวันออก', emp: 2, sales: 672000, problems: 0 },
+            { name: 'DoHome บางบัวทอง', store: 'DoHome', region: 'กลาง', emp: 3, sales: 756000, problems: 1 },
+            { name: 'DoHome ขอนแก่น', store: 'DoHome', region: 'อีสาน', emp: 2, sales: 472000, problems: 1 },
+            { name: 'BnB พระราม2', store: 'BnB Home', region: 'กลาง', emp: 2, sales: 567000, problems: 0 },
+            { name: 'BnB ระยอง', store: 'BnB Home', region: 'ตะวันออก', emp: 1, sales: 373000, problems: 0 },
+            { name: 'MegaHome รังสิต', store: 'MegaHome', region: 'กลาง', emp: 2, sales: 450000, problems: 1 },
+            { name: 'MegaHome บ่อวิน', store: 'MegaHome', region: 'ตะวันออก', emp: 2, sales: 380000, problems: 0 },
+        ],
+    };
+
+    // === พนักงาน ===
+    data.employees = {
+        total: 48,
+        working: 42,
+        late: 3,
+        onLeave: 2,
+        absent: 1,
+        otTotal: 100,
+        otCost: 15000,
+        pcPerformance: [
+            { name: 'พรทิพย์ สวยงาม', branch: 'HomePro เอกมัย', sales: 285000, items: 34, target: '71%', ot: 18 },
+            { name: 'มานี รักเรียน', branch: 'BnB พระราม2', sales: 260000, items: 28, target: '65%', ot: 0 },
+            { name: 'จรัญ ทำดี', branch: 'HomePro พัทยา', sales: 220000, items: 22, target: '55%', ot: 8 },
+            { name: 'สุดา ใจดี', branch: 'DoHome ระยอง', sales: 195000, items: 19, target: '49%', ot: 0 },
+            { name: 'วิชัย มั่นคง', branch: 'MegaHome รังสิต', sales: 150000, items: 15, target: '38%', ot: 0 },
+        ],
+        frequentlyLate: [
+            { name: 'วิชัย มั่นคง', branch: 'MegaHome รังสิต', times: 4, avgMinutes: 25 },
+            { name: 'สมชาย ใจดี', branch: 'DoHome บางบัวทอง', times: 2, avgMinutes: 15 },
+        ],
+        leaveRequests: [
+            { name: 'สมชาย ใจดี', type: 'ลาป่วย', date: '13-14 ก.พ.', status: 'รออนุมัติ' },
+            { name: 'มานี รักเรียน', type: 'ลาพักร้อน', date: '17-19 ก.พ.', status: 'รออนุมัติ' },
+            { name: 'วิชัย มั่นคง', type: 'ลากิจ', date: '20 ก.พ.', status: 'รออนุมัติ' },
+        ],
+    };
+
+    // === สต๊อก ===
+    data.stock = {
+        nonMoving: { count: 23, items: [
+            'ประตู UPVC BN-03 สีขาว (HomePro เอกมัย)', 'ประตู PVC รุ่นเก่า BW-11 (BnB พระราม2)',
+            'วงกบ WPC สี Teak (DoHome ขอนแก่น)', 'ประตูภายนอก L-22 (MegaHome รังสิต)',
+        ]},
+        belowMin: { count: 15, items: [
+            'ประตูห้องน้ำ PVC BW (HomePro เอกมัย) - เหลือ 2, Min 10',
+            'วงกบ UPVC 80x200 (DoHome บางบัวทอง) - เหลือ 3, Min 8',
+            'ประตู UPVC BN-01 (BnB ระยอง) - เหลือ 1, Min 5',
+            'HDF บานประตู (DoHome ขอนแก่น) - เหลือ 2, Min 10',
+        ]},
+        noDisplay: { count: 8, items: [
+            'ประตู ANYHOME รุ่น AN-05 (HomePro พัทยา)',
+            'ประตู POLY TIMBER PT-01 (MegaHome บ่อวิน)',
+            'ประตู EXTERA EX-03 (DoHome ขอนแก่น)',
+        ]},
+        priceMismatch: { count: 4, items: [
+            'วงกบ WPC 80x200 ระบบ 1,490 ป้าย 1,590 (DoHome บางบัวทอง)',
+            'ประตู UPVC BN-01 ระบบ 1,790 ป้าย 1,890 (MegaHome รังสิต)',
+        ]},
+    };
+
+    // === ปัญหา ===
+    data.problems = {
+        total: 7,
+        urgent: 2,
+        open: 2,
+        inProgress: 3,
+        list: [
+            { title: 'ป้ายโปรโมชั่นหมดอายุยังแสดงอยู่', branch: 'Mega Bangna', severity: 'เร่งด่วน', status: 'รับทราบ' },
+            { title: 'ประตูโชว์ไม่ได้จัดวางตาม Schematic', branch: 'HomePro เอกมัย', severity: 'สูง', status: 'กำลังแก้' },
+            { title: 'สต๊อก HDF ไม่เพียงพอ', branch: 'DoHome ขอนแก่น', severity: 'สูง', status: 'กำลังแก้' },
+            { title: 'ประตูโชว์มีรอยขีดข่วน', branch: 'HomePro เชียงใหม่', severity: 'ปานกลาง', status: 'เปิดใหม่' },
+            { title: 'ราคาไม่ตรงกับป้าย 3 รายการ', branch: 'DoHome บางบัวทอง', severity: 'ปานกลาง', status: 'เปิดใหม่' },
+        ],
+    };
+
+    return data;
+}
+
+function formatMDTDataForAI(role) {
+    const d = getMDTData(role);
+    let text = '';
+
+    // ยอดขาย
+    text += `\n=== ข้อมูลยอดขายเดือนนี้ ===\n`;
+    text += `ยอดรวม: ${(d.sales.total/1e6).toFixed(1)} ล้านบาท (${d.sales.totalItems} ชิ้น, ${d.sales.totalBills} บิล) เติบโต ${d.sales.growth}\n`;
+    text += `ยอดขายตามห้าง:\n`;
+    d.sales.byMall.forEach(m => { text += `  - ${m.name}: ${(m.sales/1e6).toFixed(2)} ล้านบาท (${m.pct}) แนวโน้ม ${m.trend}\n`; });
+    text += `ยอดขายตามหมวดสินค้า:\n`;
+    d.sales.byCategory.forEach(c => { text += `  - ${c.name}: ${(c.sales/1e6).toFixed(1)} ล้านบาท (${c.qty} ชิ้น)\n`; });
+    text += `สินค้าขายดี 5 อันดับ:\n`;
+    d.sales.topProducts.forEach((p,i) => { text += `  ${i+1}. ${p.name}: ${p.qty} ชิ้น (${(p.sales/1000).toFixed(0)}K)\n`; });
+
+    // สาขา
+    text += `\n=== ข้อมูลสาขา ===\n`;
+    text += `สาขาทั้งหมด: ${d.branches.total} สาขา (+${d.branches.newThisMonth} ใหม่เดือนนี้)\n`;
+    d.branches.list.forEach(b => { text += `  - ${b.name} (${b.store}/${b.region}): พนักงาน ${b.emp}, ยอด ${(b.sales/1000).toFixed(0)}K, ปัญหา ${b.problems}\n`; });
+
+    // พนักงาน
+    text += `\n=== ข้อมูลพนักงาน ===\n`;
+    text += `ทั้งหมด: ${d.employees.total} คน, ทำงานวันนี้: ${d.employees.working}, มาสาย: ${d.employees.late}, ลา: ${d.employees.onLeave}, ขาด: ${d.employees.absent}\n`;
+    text += `OT รวม: ${d.employees.otTotal} ชม. = ${(d.employees.otCost).toLocaleString()} บาท\n`;
+    text += `ผลงาน PC (พนักงานขาย):\n`;
+    d.employees.pcPerformance.forEach((p,i) => { text += `  ${i+1}. ${p.name} (${p.branch}): ยอด ${(p.sales/1000).toFixed(0)}K, ${p.items} ชิ้น, Target ${p.target}, OT ${p.ot}ชม.\n`; });
+    if (role === 'admin' || role === 'hr' || role === 'supervisor') {
+        text += `พนักงานมาสายบ่อย:\n`;
+        d.employees.frequentlyLate.forEach(p => { text += `  - ${p.name} (${p.branch}): ${p.times} ครั้ง เฉลี่ย ${p.avgMinutes} นาที\n`; });
+        text += `คำขอลารออนุมัติ:\n`;
+        d.employees.leaveRequests.forEach(l => { text += `  - ${l.name}: ${l.type} ${l.date} (${l.status})\n`; });
+    }
+
+    // สต๊อก
+    text += `\n=== ข้อมูลสต๊อก ===\n`;
+    text += `สินค้าไม่เคลื่อนไหว: ${d.stock.nonMoving.count} รายการ\n`;
+    d.stock.nonMoving.items.forEach(i => { text += `  - ${i}\n`; });
+    text += `ต่ำกว่า Min Stock: ${d.stock.belowMin.count} รายการ\n`;
+    d.stock.belowMin.items.forEach(i => { text += `  - ${i}\n`; });
+    text += `ไม่มีตัวโชว์: ${d.stock.noDisplay.count} รายการ\n`;
+    d.stock.noDisplay.items.forEach(i => { text += `  - ${i}\n`; });
+    text += `ราคาไม่ตรง: ${d.stock.priceMismatch.count} รายการ\n`;
+    d.stock.priceMismatch.items.forEach(i => { text += `  - ${i}\n`; });
+
+    // ปัญหา
+    text += `\n=== ปัญหารอแก้ไข ===\n`;
+    text += `ทั้งหมด: ${d.problems.total} เรื่อง (เร่งด่วน: ${d.problems.urgent}, เปิดใหม่: ${d.problems.open}, กำลังแก้: ${d.problems.inProgress})\n`;
+    d.problems.list.forEach(p => { text += `  - [${p.severity}] ${p.title} @ ${p.branch} (${p.status})\n`; });
+
+    return text;
+}
+
 function getSystemPrompt() {
     const role = currentRole;
     const roleInfo = ROLE_NAMES[role];
-    return `คุณเป็น AI ผู้ช่วยของบริษัท สยามพลาสวูด จำกัด ผู้ผลิตและจำหน่ายประตู UPVC, WPC, PVC และวงกบ
-แบรนด์หลัก: AZLE (ประตู UPVC/WPC), และสินค้า PVC
-จำหน่ายผ่านห้าง: HomePro, DoHome, MegaHome, BnB Home (BTV)
+    const mdtData = formatMDTDataForAI(role);
 
-ผู้ใช้ปัจจุบัน: ${roleInfo.fullName} (${roleInfo.name})
+    return `คุณเป็น AI ผู้ช่วยวิเคราะห์ข้อมูลของระบบ MDT (Modern Distribution Tool) ของบริษัท สยามพลาสวูด จำกัด
 
-ข้อมูลบริษัท:
-- สินค้าหลัก: ประตูห้องน้ำ UPVC, ประตูภายนอก UPVC, ประตูภายใน WPC, วงกบ WPC/UPVC, ประตู PVC
-- จุดเด่น: กันน้ำ 100%, ปลวกไม่กิน, ไม่บวม ไม่หด, ทนแดดทนฝน, ติดตั้งง่าย
-- ช่วงราคา: PVC 900-1,500 บาท, UPVC 1,500-3,500 บาท, WPC 2,500-5,000 บาท
-- สาขาที่จำหน่าย: HomePro 90+ สาขา, DoHome 20+ สาขา, MegaHome 8+ สาขา, BnB Home 10+ สาขา
+== ขอบเขตการตอบ ==
+- ตอบเฉพาะคำถามที่เกี่ยวกับข้อมูลในระบบ MDT เท่านั้น ได้แก่: ยอดขาย, สต๊อก, สาขา, พนักงาน, ปัญหา, และกลยุทธ์การขาย
+- ถ้าผู้ใช้ถามเรื่องที่ไม่เกี่ยวข้อง ให้บอกสุภาพว่า "ขออภัยครับ ผมตอบได้เฉพาะคำถามเกี่ยวกับข้อมูลในระบบ MDT เช่น ยอดขาย สต๊อก สาขา พนักงาน ปัญหา และกลยุทธ์การขายครับ"
+- ใช้เฉพาะข้อมูลที่ให้ไว้ด้านล่างในการตอบ ห้ามสร้างตัวเลขขึ้นมาเอง
 
-แนวทางตอบ:
+== ผู้ใช้ปัจจุบัน ==
+ชื่อ: ${roleInfo.fullName}
+บทบาท: ${roleInfo.name}
+
+== ข้อมูลบริษัท ==
+บริษัท สยามพลาสวูด จำกัด - ผู้ผลิตและจำหน่ายประตู UPVC, WPC, PVC และวงกบ
+แบรนด์: AZLE (ประตู UPVC/WPC), EXTERA, ANYHOME, POLY TIMBER
+จำหน่ายผ่าน: HomePro, DoHome, MegaHome, BnB Home (BTV)
+จุดเด่นสินค้า: กันน้ำ 100%, ปลวกไม่กิน, ไม่บวม ไม่หด, ทนแดดทนฝน
+ช่วงราคา: PVC 900-1,500฿, UPVC 1,500-3,500฿, WPC 2,500-5,000฿
+
+== ข้อมูลระบบ MDT (ข้อมูลจริง ณ ปัจจุบัน) ==
+${mdtData}
+
+== แนวทางตอบ ==
 - ตอบเป็นภาษาไทย กระชับ ตรงประเด็น
-- ใช้ข้อมูลเชิงตัวเลขและสถิติเมื่อเป็นไปได้
+- อ้างอิงตัวเลขจริงจากข้อมูลด้านบนเสมอ
+- วิเคราะห์เปรียบเทียบเมื่อเป็นไปได้ (สูง/ต่ำ, เพิ่ม/ลด)
 - ให้คำแนะนำที่นำไปปฏิบัติได้จริง (Actionable)
-- ปรับระดับรายละเอียดตามบทบาทผู้ใช้
-- ถ้าเป็นคำถามเกี่ยวกับข้อมูลเฉพาะที่ไม่มี ให้แจ้งว่าต้องดูจากระบบรายงาน
-- ห้ามสร้างตัวเลขปลอม ถ้าไม่มีข้อมูลจริงให้บอกตรงๆ`;
+- ปรับระดับรายละเอียดตามบทบาทผู้ใช้`;
 }
 
 function showAISettings() {
