@@ -17,7 +17,7 @@
 <title>MDT ERP - Siam Plaswood</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=5">
+<link rel="stylesheet" href="css/app.css?v=6">
 <style>
 /* ===== LOGIN SCREEN ===== */
 .login-screen {
@@ -288,24 +288,31 @@
     </div>
 </div>
 
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="bottom-nav" id="bottomNav" style="display:none">
+    <div class="bottom-nav-inner" id="bottomNavInner">
+        <!-- Populated by JS based on role -->
+    </div>
+</nav>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=5"></script>
-<script src="js/pages/dashboard.js?v=5"></script>
-<script src="js/pages/attendance.js?v=5"></script>
-<script src="js/pages/sales.js?v=5"></script>
-<script src="js/pages/workflows.js?v=5"></script>
-<script src="js/pages/problems.js?v=5"></script>
-<script src="js/pages/branches.js?v=5"></script>
-<script src="js/pages/communications.js?v=5"></script>
-<script src="js/pages/hr.js?v=5"></script>
-<script src="js/pages/import.js?v=5"></script>
-<script src="js/pages/ai.js?v=5"></script>
-<script src="js/pages/products.js?v=5"></script>
-<script src="js/pages/users.js?v=5"></script>
-<script src="js/pages/settings.js?v=5"></script>
+<script src="js/app.js?v=6"></script>
+<script src="js/pages/dashboard.js?v=6"></script>
+<script src="js/pages/attendance.js?v=6"></script>
+<script src="js/pages/sales.js?v=6"></script>
+<script src="js/pages/workflows.js?v=6"></script>
+<script src="js/pages/problems.js?v=6"></script>
+<script src="js/pages/branches.js?v=6"></script>
+<script src="js/pages/communications.js?v=6"></script>
+<script src="js/pages/hr.js?v=6"></script>
+<script src="js/pages/import.js?v=6"></script>
+<script src="js/pages/ai.js?v=6"></script>
+<script src="js/pages/products.js?v=6"></script>
+<script src="js/pages/users.js?v=6"></script>
+<script src="js/pages/settings.js?v=6"></script>
 <script>
 // Login function
 function loginAs(role) {
@@ -324,6 +331,9 @@ function loginAs(role) {
         sidebar.style.display = '';
         mainContent.style.display = '';
         document.getElementById('topDate').textContent = new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+        // Show bottom nav on mobile
+        const bottomNav = document.getElementById('bottomNav');
+        if (bottomNav) bottomNav.style.display = '';
         switchRole(role);
     }, 400);
 }
@@ -334,11 +344,13 @@ function logout() {
     const roleBar = document.getElementById('roleBar');
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('mainContent');
+    const bottomNav = document.getElementById('bottomNav');
 
     // Hide app
     roleBar.style.display = 'none';
     sidebar.style.display = 'none';
     mainContent.style.display = 'none';
+    if (bottomNav) bottomNav.style.display = 'none';
 
     // Show login screen
     loginScreen.style.display = '';

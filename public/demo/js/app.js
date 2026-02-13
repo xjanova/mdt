@@ -108,6 +108,89 @@ const ROLE_NAMES = {
     employee: { name:'พนักงาน', avatar:'จร', fullName:'จรัญ พนักงาน' },
 };
 
+// Bottom nav menu definitions per role (5 items max for mobile)
+const BOTTOM_NAV = {
+    admin: [
+        { id:'dashboard', icon:'fa-chart-pie', label:'แดชบอร์ด' },
+        { id:'sales', icon:'fa-chart-line', label:'ยอดขาย' },
+        { id:'ai', icon:'fa-robot', label:'AI', center:true },
+        { id:'products', icon:'fa-box-open', label:'สินค้า' },
+        { id:'_more', icon:'fa-bars', label:'เพิ่มเติม' },
+    ],
+    supervisor: [
+        { id:'dashboard', icon:'fa-chart-pie', label:'แดชบอร์ด' },
+        { id:'workflows', icon:'fa-diagram-project', label:'โฟลงาน', badge:3 },
+        { id:'ai', icon:'fa-robot', label:'AI', center:true },
+        { id:'products', icon:'fa-box-open', label:'สินค้า' },
+        { id:'_more', icon:'fa-bars', label:'เพิ่มเติม' },
+    ],
+    seller: [
+        { id:'dashboard', icon:'fa-chart-pie', label:'หน้าหลัก' },
+        { id:'attendance', icon:'fa-clock', label:'ลงเวลา' },
+        { id:'ai', icon:'fa-robot', label:'AI', center:true },
+        { id:'sales', icon:'fa-chart-line', label:'ยอดขาย' },
+        { id:'_more', icon:'fa-bars', label:'เพิ่มเติม' },
+    ],
+    hr: [
+        { id:'dashboard', icon:'fa-chart-pie', label:'แดชบอร์ด' },
+        { id:'hr', icon:'fa-people-group', label:'พนักงาน' },
+        { id:'ai', icon:'fa-robot', label:'AI', center:true },
+        { id:'attendance', icon:'fa-clock', label:'เวลางาน' },
+        { id:'_more', icon:'fa-bars', label:'เพิ่มเติม' },
+    ],
+    employee: [
+        { id:'dashboard', icon:'fa-chart-pie', label:'หน้าหลัก' },
+        { id:'attendance', icon:'fa-clock', label:'ลงเวลา' },
+        { id:'ai', icon:'fa-robot', label:'AI', center:true },
+        { id:'workflows', icon:'fa-diagram-project', label:'งาน', badge:1 },
+        { id:'_more', icon:'fa-bars', label:'เพิ่มเติม' },
+    ],
+};
+
+function buildBottomNav(role) {
+    const container = document.getElementById('bottomNavInner');
+    const nav = document.getElementById('bottomNav');
+    if (!container || !nav) return;
+
+    const items = BOTTOM_NAV[role] || BOTTOM_NAV.admin;
+    let html = '';
+    items.forEach(item => {
+        const isCenter = item.center;
+        const isMore = item.id === '_more';
+        const isActive = !isMore && item.id === currentPage;
+
+        if (isCenter) {
+            html += `<button class="bottom-nav-item bnav-center${isActive ? ' active' : ''}"
+                        data-bnav="${item.id}" onclick="loadPage('${item.id}')">
+                        <div class="bnav-ai-icon"><i class="fas ${item.icon}"></i></div>
+                        <span>${item.label}</span>
+                    </button>`;
+        } else if (isMore) {
+            html += `<button class="bottom-nav-item" data-bnav="_more" onclick="toggleSidebar()">
+                        <i class="fas ${item.icon}"></i>
+                        <span>${item.label}</span>
+                    </button>`;
+        } else {
+            html += `<button class="bottom-nav-item${isActive ? ' active' : ''}"
+                        data-bnav="${item.id}" onclick="loadPage('${item.id}')">
+                        <i class="fas ${item.icon}"></i>
+                        ${item.badge ? `<span class="bnav-badge">${item.badge}</span>` : ''}
+                        <span>${item.label}</span>
+                    </button>`;
+        }
+    });
+    container.innerHTML = html;
+    nav.style.display = '';
+}
+
+function updateBottomNavActive(pageId) {
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+        const navId = btn.dataset.bnav;
+        if (navId === '_more') return;
+        btn.classList.toggle('active', navId === pageId);
+    });
+}
+
 function switchRole(role) {
     currentRole = role;
     // Update role buttons
@@ -121,6 +204,8 @@ function switchRole(role) {
     document.getElementById('userAvatar').textContent = info.avatar;
     // Rebuild sidebar
     buildSidebar(role);
+    // Rebuild bottom nav
+    buildBottomNav(role);
     // Load dashboard
     loadPage('dashboard');
 }
@@ -187,6 +272,8 @@ function loadPage(pageId) {
     document.getElementById('sidebar').classList.remove('mobile-open');
     const sOverlay = document.getElementById('sidebarOverlay');
     if (sOverlay) sOverlay.style.display = 'none';
+    // Update bottom nav active state
+    updateBottomNavActive(pageId);
     // Scroll to top
     window.scrollTo(0, 0);
 }

@@ -656,6 +656,137 @@ body {
     .drop-zone p:first-of-type { font-size:13px !important; }
 }
 
+/* ===== BOTTOM NAVIGATION BAR (Mobile) ===== */
+.bottom-nav {
+    position:fixed; bottom:0; left:0; right:0;
+    z-index:1000;
+    background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border-top:1px solid rgba(0,0,0,0.08);
+    box-shadow:0 -4px 30px rgba(0,0,0,0.08);
+    padding-bottom:env(safe-area-inset-bottom);
+    display:none; /* shown by JS on mobile */
+    transition:transform .3s cubic-bezier(0.4,0,0.2,1);
+}
+.bottom-nav.hidden { transform:translateY(100%); }
+
+.bottom-nav-inner {
+    display:flex; align-items:stretch; justify-content:space-around;
+    height:60px; max-width:500px; margin:0 auto;
+    padding:0 4px;
+}
+
+.bottom-nav-item {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; padding:6px 2px 4px;
+    color:var(--gray-400); text-decoration:none;
+    cursor:pointer; position:relative;
+    transition:color .2s; border:none; background:none;
+    font-family:'Sarabun',sans-serif; -webkit-tap-highlight-color:transparent;
+    min-width:0;
+}
+.bottom-nav-item:active { transform:scale(0.92); }
+
+.bottom-nav-item i {
+    font-size:19px; transition:all .25s cubic-bezier(0.4,0,0.2,1);
+    position:relative;
+}
+.bottom-nav-item span {
+    font-size:10px; font-weight:600; letter-spacing:0.3px;
+    transition:all .25s; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; max-width:64px;
+}
+
+/* Active state */
+.bottom-nav-item.active { color:var(--primary); }
+.bottom-nav-item.active i {
+    transform:translateY(-2px) scale(1.1);
+    color:var(--primary);
+}
+.bottom-nav-item.active span { color:var(--primary); font-weight:700; }
+
+/* Active indicator pill */
+.bottom-nav-item.active::before {
+    content:''; position:absolute; top:-1px;
+    width:32px; height:3px; border-radius:0 0 3px 3px;
+    background:var(--primary);
+    animation:bnav-indicator .3s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes bnav-indicator {
+    from { width:0; opacity:0; }
+    to { width:32px; opacity:1; }
+}
+
+/* Notification badge on bottom nav */
+.bottom-nav-item .bnav-badge {
+    position:absolute; top:4px; right:50%; margin-right:-18px;
+    background:var(--danger); color:white;
+    font-size:9px; font-weight:700;
+    min-width:16px; height:16px; line-height:16px;
+    text-align:center; border-radius:8px;
+    padding:0 4px;
+    box-shadow:0 1px 4px rgba(239,68,68,0.4);
+}
+
+/* Center AI Button (special style) */
+.bottom-nav-item.bnav-center {
+    position:relative;
+}
+.bottom-nav-item.bnav-center .bnav-ai-icon {
+    width:46px; height:46px; border-radius:50%;
+    background:linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    display:flex; align-items:center; justify-content:center;
+    color:white; font-size:20px;
+    margin-top:-20px;
+    box-shadow:0 4px 15px rgba(30,58,95,0.35);
+    transition:all .25s cubic-bezier(0.4,0,0.2,1);
+    position:relative;
+}
+.bottom-nav-item.bnav-center .bnav-ai-icon::after {
+    content:''; position:absolute; inset:-3px;
+    border-radius:50%; border:2px solid rgba(255,255,255,0.9);
+}
+.bottom-nav-item.bnav-center:active .bnav-ai-icon {
+    transform:scale(0.9);
+    box-shadow:0 2px 8px rgba(30,58,95,0.3);
+}
+.bottom-nav-item.bnav-center.active .bnav-ai-icon {
+    background:linear-gradient(135deg, var(--accent) 0%, #d97706 100%);
+    box-shadow:0 4px 18px rgba(245,158,11,0.4);
+}
+.bottom-nav-item.bnav-center span {
+    font-size:9px; margin-top:1px;
+}
+
+/* Ripple effect */
+.bottom-nav-item::after {
+    content:''; position:absolute; inset:0;
+    border-radius:12px; background:currentColor; opacity:0;
+    transition:opacity .2s;
+}
+.bottom-nav-item:active::after { opacity:0.08; }
+
+/* ===== Bottom Nav Responsive ===== */
+@media (max-width:768px) {
+    .bottom-nav { display:block; }
+    /* Add bottom padding to content area so content isn't hidden behind bottom nav */
+    .content-area { padding-bottom:calc(80px + env(safe-area-inset-bottom)) !important; }
+    /* Adjust toast position above bottom nav */
+    .toast { bottom:calc(72px + env(safe-area-inset-bottom)) !important; }
+    /* Adjust PWA install banner */
+    .pwa-install-banner { bottom:calc(60px + env(safe-area-inset-bottom)); }
+}
+@media (min-width:769px) {
+    .bottom-nav { display:none !important; }
+}
+
+/* Dark mode bottom nav when scrolling (optional - triggered by JS) */
+.bottom-nav.bnav-scrolled {
+    background:rgba(255,255,255,0.95);
+    box-shadow:0 -2px 20px rgba(0,0,0,0.12);
+}
+
 /* ===== Mobile-specific utility classes ===== */
 .hide-mobile { }
 .show-mobile { display:none !important; }
