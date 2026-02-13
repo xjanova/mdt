@@ -477,20 +477,14 @@ body {
 }
 
 @media (max-width:768px) {
-    :root { --rolebar-h:40px; --topbar-h:48px; }
+    :root { --rolebar-h:0px; --topbar-h:48px; }
     .sidebar { transform:translateX(-100%); width:280px; }
     .sidebar.mobile-open { transform:translateX(0); box-shadow:4px 0 20px rgba(0,0,0,0.3); }
     .main-content { margin-left:0 !important; }
     .menu-toggle { display:block; }
 
-    /* Role bar - horizontal scroll */
-    .role-bar { padding:0 8px; gap:4px; flex-wrap:nowrap; }
-    .role-bar-switches { overflow-x:auto; -webkit-overflow-scrolling:touch; flex:1; gap:4px; padding:4px 0; scrollbar-width:none; }
-    .role-bar-switches::-webkit-scrollbar { display:none; }
-    .role-btn { font-size:11px; padding:3px 8px; white-space:nowrap; flex-shrink:0; }
-    .role-bar-brand { font-size:12px; white-space:nowrap; flex-shrink:0; }
-    .role-bar-brand i { margin-right:3px; }
-    .role-bar-label { display:none; }
+    /* Role bar - HIDDEN on mobile */
+    .role-bar { display:none !important; }
 
     /* Stats */
     .stats-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
@@ -564,16 +558,10 @@ body {
 }
 
 @media (max-width:480px) {
-    :root { --rolebar-h:36px; }
     .stats-grid { grid-template-columns:1fr; gap:8px; }
     .stat-card { padding:12px; }
     .stat-value { font-size:18px; }
     .stat-label { font-size:11px; }
-
-    .role-bar { padding:0 6px; }
-    .role-bar-license { display:none; }
-    .role-bar-version { display:none; }
-    .role-btn { font-size:10px; padding:2px 6px; }
 
     .content-area { padding:8px; }
     .card-header h3 { font-size:13px; }
