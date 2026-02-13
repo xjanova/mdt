@@ -1,9 +1,14 @@
 /* AI Assistant Page - Multi-Provider: Google Gemini (Free) + Grok */
+/* Settings stored on server via PHP API + localStorage fallback */
 
 let aiChatHistory = [];
 let aiApiKey = '';
 let aiModel = 'gemini-2.0-flash';
 let aiProvider = 'gemini'; // 'gemini' or 'grok'
+let aiSettingsLoaded = false;
+
+// API base URL for settings
+const AI_SETTINGS_API = 'api/ai-settings.php';
 
 const AI_PROVIDERS = {
     gemini: {
@@ -37,11 +42,21 @@ const AI_PROVIDERS = {
     },
 };
 
-function renderAI(role) {
+async function renderAI(role) {
     const c = document.getElementById('contentArea');
-    aiProvider = loadData('ai_provider', 'gemini');
-    aiApiKey = loadData('ai_api_key_' + aiProvider, '');
-    aiModel = loadData('ai_model', aiProvider === 'gemini' ? 'gemini-2.0-flash' : 'grok-3');
+
+    // Show loading state while fetching server settings
+    if (!aiSettingsLoaded) {
+        c.innerHTML = `<div style="text-align:center;padding:60px"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary)"></i><p style="color:var(--gray-500);margin-top:12px">กำลังโหลดการตั้งค่า AI...</p></div>`;
+        await loadAISettingsFromServer();
+    }
+
+    // Fallback to localStorage if server didn't have settings
+    if (!aiApiKey) {
+        aiProvider = loadData('ai_provider', 'gemini');
+        aiApiKey = loadData('ai_api_key_' + aiProvider, '');
+        aiModel = loadData('ai_model', aiProvider === 'gemini' ? 'gemini-2.0-flash' : 'grok-3');
+    }
     aiChatHistory = loadData('ai_chat_history', []);
 
     const prov = AI_PROVIDERS[aiProvider];
@@ -834,6 +849,15 @@ function showAISettings() {
                 <p style="font-size:11px;color:var(--gray-600)">API Key จะถูกเก็บเฉพาะในเบราว์เซอร์ของคุณ (localStorage) ไม่มีการส่งไปเซิร์ฟเวอร์ใดๆ</p>
             `}
         </div>
+
+        <!-- Server Storage Info -->
+        <div style="padding:10px 12px;background:var(--gray-50);border-radius:8px;margin-top:8px;display:flex;align-items:center;gap:8px">
+            <i class="fas fa-server" style="color:var(--success);font-size:14px"></i>
+            <div>
+                <p style="font-size:11px;font-weight:600;color:var(--gray-700)">บันทึกลงฐานข้อมูลเซิร์ฟเวอร์</p>
+                <p style="font-size:10px;color:var(--gray-400)">การตั้งค่าจะถูกเก็บบนเซิร์ฟเวอร์ ใช้ได้ทุกอุปกรณ์ + สำรองข้อมูลในเครื่อง</p>
+            </div>
+        </div>
     `, `<button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
         <button class="btn btn-success" onclick="saveAISettings()"><i class="fas fa-check"></i> บันทึก</button>`);
 }
@@ -878,7 +902,61 @@ function onProviderChange(newProvider) {
     }
 }
 
-function saveAISettings() {
+async function loadAISettingsFromServer() {
+    try {
+        const resp = await fetch(AI_SETTINGS_API, {
+            headers: { 'X-MDT-Full-Key': 'true' }
+        });
+        if (resp.ok) {
+            const result = await resp.json();
+            if (result.success && result.data) {
+                const d = result.data;
+                if (d.provider) aiProvider = d.provider;
+                if (d.model) aiModel = d.model;
+                if (d.keys && d.keys[aiProvider]) {
+                    aiApiKey = d.keys[aiProvider];
+                }
+                // Also sync to localStorage as fallback
+                saveData('ai_provider', aiProvider);
+                if (aiApiKey) saveData('ai_api_key_' + aiProvider, aiApiKey);
+                saveData('ai_model', aiModel);
+                aiSettingsLoaded = true;
+                console.log('[AI] Settings loaded from server:', aiProvider, aiModel);
+            }
+        }
+    } catch (err) {
+        console.log('[AI] Server settings unavailable, using localStorage fallback:', err.message);
+    }
+    aiSettingsLoaded = true;
+}
+
+async function saveAISettingsToServer(provider, key, model) {
+    try {
+        const resp = await fetch(AI_SETTINGS_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: provider,
+                model: model,
+                key: key,
+                key_provider: provider,
+                model_provider: provider,
+            })
+        });
+        if (resp.ok) {
+            const result = await resp.json();
+            if (result.success) {
+                console.log('[AI] Settings saved to server');
+                return true;
+            }
+        }
+    } catch (err) {
+        console.log('[AI] Failed to save to server:', err.message);
+    }
+    return false;
+}
+
+async function saveAISettings() {
     const key = document.getElementById('aiApiKeyInput').value.trim();
     const model = document.getElementById('aiModelSelect').value;
     const selectedProvider = document.querySelector('input[name="aiProviderRadio"]:checked').value;
@@ -892,6 +970,7 @@ function saveAISettings() {
     aiApiKey = key;
     aiModel = model;
 
+    // Save to localStorage (immediate fallback)
     saveData('ai_provider', aiProvider);
     saveData('ai_api_key_' + aiProvider, aiApiKey);
     saveData('ai_model', aiModel);
@@ -902,6 +981,9 @@ function saveAISettings() {
         saveData('grok_api_key', aiApiKey);
         saveData('grok_model', aiModel);
     }
+
+    // Save to server (async, non-blocking)
+    const serverSaved = await saveAISettingsToServer(aiProvider, aiApiKey, aiModel);
 
     // Update status
     const statusEl = document.getElementById('aiConnectionStatus');
@@ -915,7 +997,7 @@ function saveAISettings() {
     if (provEl) provEl.textContent = AI_PROVIDERS[aiProvider].name;
 
     closeModal();
-    showToast('บันทึกการตั้งค่า AI สำเร็จ!');
+    showToast(serverSaved ? 'บันทึกการตั้งค่า AI ลงฐานข้อมูลสำเร็จ!' : 'บันทึกในเครื่องสำเร็จ (เซิร์ฟเวอร์ไม่พร้อม)');
 }
 
 function clearAIChat() {

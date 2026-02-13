@@ -85,6 +85,10 @@ body {
     transition: transform .3s;
 }
 .sidebar.collapsed { transform: translateX(-100%); }
+.sidebar-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.4);
+    z-index:99; display:none; -webkit-tap-highlight-color:transparent;
+}
 .sidebar-header {
     padding:20px 16px 16px; display:flex; align-items:center; gap:12px;
     border-bottom:1px solid rgba(255,255,255,0.1);
@@ -441,23 +445,96 @@ textarea.form-control { min-height:80px; resize:vertical; }
 .settings-nav-item.active { background:var(--primary); color:white; font-weight:600; }
 .settings-nav-item i { width:16px; text-align:center; font-size:13px; }
 
+/* ===== PWA / Mobile App ===== */
+html { -webkit-text-size-adjust:100%; }
+body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    overscroll-behavior: none;
+}
+/* Safe area for notch devices */
+.role-bar { padding-top:env(safe-area-inset-top); }
+.sidebar { top:calc(var(--rolebar-h) + env(safe-area-inset-top)); }
+.main-content { margin-top:calc(var(--rolebar-h) + env(safe-area-inset-top)); }
+.top-bar { top:calc(var(--rolebar-h) + env(safe-area-inset-top)); }
+.toast { bottom:calc(24px + env(safe-area-inset-bottom)); }
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    position:fixed; bottom:0; left:0; right:0; z-index:5000;
+    background:white; border-top:1px solid var(--gray-200);
+    box-shadow:0 -4px 20px rgba(0,0,0,0.1);
+    transform:translateY(100%); transition:transform .3s;
+    padding:12px 16px; padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
+.pwa-install-banner.show { transform:translateY(0); }
+.pwa-install-content { display:flex; align-items:center; gap:10px; max-width:600px; margin:0 auto; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width:1024px) {
     .grid-4 { grid-template-columns:repeat(2,1fr); }
     .grid-3 { grid-template-columns:repeat(2,1fr); }
 }
+
 @media (max-width:768px) {
-    .sidebar { transform:translateX(-100%); }
-    .sidebar.mobile-open { transform:translateX(0); }
+    :root { --rolebar-h:40px; --topbar-h:48px; }
+    .sidebar { transform:translateX(-100%); width:280px; }
+    .sidebar.mobile-open { transform:translateX(0); box-shadow:4px 0 20px rgba(0,0,0,0.3); }
     .main-content { margin-left:0 !important; }
     .menu-toggle { display:block; }
-    .role-bar-switches { overflow-x:auto; }
-    .role-btn { font-size:11px; padding:3px 8px; white-space:nowrap; }
-    .stats-grid { grid-template-columns:repeat(2,1fr); }
+
+    /* Role bar - horizontal scroll */
+    .role-bar { padding:0 8px; gap:4px; flex-wrap:nowrap; }
+    .role-bar-switches { overflow-x:auto; -webkit-overflow-scrolling:touch; flex:1; gap:4px; padding:4px 0; scrollbar-width:none; }
+    .role-bar-switches::-webkit-scrollbar { display:none; }
+    .role-btn { font-size:11px; padding:3px 8px; white-space:nowrap; flex-shrink:0; }
+    .role-bar-brand { font-size:12px; white-space:nowrap; flex-shrink:0; }
+    .role-bar-brand i { margin-right:3px; }
+    .role-bar-label { display:none; }
+
+    /* Stats */
+    .stats-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+    .stat-card { padding:14px 12px; gap:10px; }
+    .stat-icon { width:40px; height:40px; font-size:16px; }
+    .stat-value { font-size:20px; }
+
+    /* Grids */
     .grid-2, .grid-3, .grid-4 { grid-template-columns:1fr; }
-    .content-area { padding:16px; }
-    .filter-bar { flex-direction:column; }
+    .content-area { padding:12px; padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
+
+    /* Filter bar - stack */
+    .filter-bar { flex-direction:column; padding:12px; gap:8px; }
+    .filter-bar .form-group { min-width:100% !important; }
+
+    /* Tables */
+    .table-wrap { margin:0 -12px; }
+    table.data-table { font-size:12px; }
+    table.data-table th, table.data-table td { padding:8px 8px; }
+
+    /* Cards */
+    .card-header { padding:12px 14px; flex-wrap:wrap; gap:8px; }
+    .card-body { padding:14px; }
+    .card-footer { padding:10px 14px; }
+
+    /* Top bar */
+    .top-bar { padding:0 12px; }
+    .page-title { font-size:16px; }
+    .top-date { display:none; }
+
+    /* Notification */
     .notif-panel { width:100vw; }
+
+    /* Modals - full width on mobile */
+    .modal-overlay { padding:8px; }
+    .modal { width:100%; max-height:90vh; border-radius:16px; }
+    .modal-header { padding:12px 16px; }
+    .modal-body { padding:16px; }
+    .modal-footer { padding:12px 16px; flex-wrap:wrap; }
+    .modal-footer .btn { flex:1; min-width:0; justify-content:center; }
+
+    /* Chat */
+    .chat-bubble { max-width:85%; }
+
     /* Settings: stack nav + content */
     #contentArea > div[style*="grid-template-columns:220px"] {
         grid-template-columns:1fr !important;
@@ -466,13 +543,100 @@ textarea.form-control { min-height:80px; resize:vertical; }
     #contentArea > div[style*="grid-template-columns:1fr 320px"] {
         grid-template-columns:1fr !important;
         height:auto !important;
+        gap:12px !important;
     }
+
+    /* Login adjustments */
+    .login-container { padding:12px; }
+    .login-card { padding:20px; }
+    .login-logo h1 { font-size:22px; }
+    .login-role-btn { padding:11px 14px; }
+    .login-role-name { font-size:14px; }
+
+    /* Sidebar overlay for mobile */
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99; }
+    .sidebar.mobile-open ~ .sidebar-overlay { display:block; }
+
+    /* Workflow cards */
+    .wf-card { padding:12px; }
+    .wf-title { font-size:13px; }
+    .wf-meta { font-size:10px; }
 }
+
 @media (max-width:480px) {
-    .stats-grid { grid-template-columns:1fr; }
-    .role-bar { padding:0 8px; }
+    :root { --rolebar-h:36px; }
+    .stats-grid { grid-template-columns:1fr; gap:8px; }
+    .stat-card { padding:12px; }
+    .stat-value { font-size:18px; }
+    .stat-label { font-size:11px; }
+
+    .role-bar { padding:0 6px; }
     .role-bar-license { display:none; }
     .role-bar-version { display:none; }
+    .role-btn { font-size:10px; padding:2px 6px; }
+
+    .content-area { padding:8px; }
+    .card-header h3 { font-size:13px; }
+
+    /* Make buttons full width on very small screens */
+    .filter-bar .btn, .card-footer .btn { width:100%; justify-content:center; }
+
+    /* AI chat fullscreen feel */
+    #contentArea > div[style*="grid-template-columns:1fr 320px"] > .card {
+        border-radius:0 !important;
+        margin:0 -8px !important;
+    }
+
+    .page-title { font-size:14px; }
+    .top-btn { font-size:14px; padding:4px; }
+    .badge { font-size:8px; padding:0 3px; }
+
+    /* Tags smaller */
+    .tag { font-size:10px; padding:2px 6px; }
+
+    /* Progress bar thicker for touch */
+    .progress { height:10px; }
+
+    /* Forms */
+    .form-control { font-size:16px; padding:10px 12px; } /* prevent iOS zoom on focus */
+}
+
+/* Touch-friendly interactive elements */
+@media (hover:none) and (pointer:coarse) {
+    .nav-item { padding:12px 20px; min-height:44px; }
+    .btn { min-height:44px; }
+    .btn-sm { min-height:36px; }
+    .form-control { min-height:44px; }
+    select.form-control { min-height:44px; }
+    .ai-suggest-btn { min-height:36px; padding:8px 14px; }
+    .top-btn { min-height:44px; min-width:44px; }
+    .menu-toggle { min-height:44px; min-width:44px; font-size:20px; }
+    table.data-table td, table.data-table th { padding:10px 8px; }
+}
+
+/* Standalone PWA mode (installed as app) */
+@media (display-mode: standalone) {
+    .role-bar { padding-top:env(safe-area-inset-top); height:calc(var(--rolebar-h) + env(safe-area-inset-top)); }
+    .pwa-install-banner { display:none !important; }
+    /* Hide logout button in standalone mode - use role switcher instead */
+}
+
+/* Landscape phone */
+@media (max-height:500px) and (orientation:landscape) {
+    .login-logo { margin-bottom:10px; }
+    .login-logo-icon { width:50px; height:50px; }
+    .login-logo-icon span { font-size:26px; }
+    .login-logo h1 { font-size:18px; }
+    .login-card { padding:16px; }
+    .login-role-btn { padding:8px 12px; }
+    .login-particles { display:none; }
+}
+
+/* Print mode - hide navigation */
+@media print {
+    .role-bar, .sidebar, .top-bar, .pwa-install-banner { display:none !important; }
+    .main-content { margin:0 !important; }
+    .content-area { padding:0 !important; }
 }
 
 /* ===== DROP ZONE (Import) ===== */
@@ -485,4 +649,18 @@ textarea.form-control { min-height:80px; resize:vertical; }
 .drop-zone.dragover {
     border-color:var(--primary); background:#dbeafe;
     box-shadow:0 0 0 4px rgba(59,130,246,0.15);
+}
+@media (max-width:768px) {
+    .drop-zone { padding:24px 16px; }
+    .drop-zone i { font-size:30px !important; }
+    .drop-zone p:first-of-type { font-size:13px !important; }
+}
+
+/* ===== Mobile-specific utility classes ===== */
+.hide-mobile { }
+.show-mobile { display:none !important; }
+@media (max-width:768px) {
+    .hide-mobile { display:none !important; }
+    .show-mobile { display:block !important; }
+    .show-mobile-flex { display:flex !important; }
 }

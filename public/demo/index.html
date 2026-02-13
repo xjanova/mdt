@@ -2,11 +2,22 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MDT ERP">
+<meta name="theme-color" content="#0f172a">
+<meta name="msapplication-TileColor" content="#0f172a">
+<meta name="application-name" content="MDT ERP">
+<meta name="description" content="MDT ERP - Siam Plaswood Modern Trade Management">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <title>MDT ERP - Siam Plaswood</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=4">
+<link rel="stylesheet" href="css/app.css?v=5">
 <style>
 /* ===== LOGIN SCREEN ===== */
 .login-screen {
@@ -202,6 +213,9 @@
     </div>
 </div>
 
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" style="display:none"></div>
+
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar" style="display:none">
     <div class="sidebar-header">
@@ -278,20 +292,20 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=4"></script>
-<script src="js/pages/dashboard.js?v=4"></script>
-<script src="js/pages/attendance.js?v=4"></script>
-<script src="js/pages/sales.js?v=4"></script>
-<script src="js/pages/workflows.js?v=4"></script>
-<script src="js/pages/problems.js?v=4"></script>
-<script src="js/pages/branches.js?v=4"></script>
-<script src="js/pages/communications.js?v=4"></script>
-<script src="js/pages/hr.js?v=4"></script>
-<script src="js/pages/import.js?v=4"></script>
-<script src="js/pages/ai.js?v=4"></script>
-<script src="js/pages/products.js?v=4"></script>
-<script src="js/pages/users.js?v=4"></script>
-<script src="js/pages/settings.js?v=4"></script>
+<script src="js/app.js?v=5"></script>
+<script src="js/pages/dashboard.js?v=5"></script>
+<script src="js/pages/attendance.js?v=5"></script>
+<script src="js/pages/sales.js?v=5"></script>
+<script src="js/pages/workflows.js?v=5"></script>
+<script src="js/pages/problems.js?v=5"></script>
+<script src="js/pages/branches.js?v=5"></script>
+<script src="js/pages/communications.js?v=5"></script>
+<script src="js/pages/hr.js?v=5"></script>
+<script src="js/pages/import.js?v=5"></script>
+<script src="js/pages/ai.js?v=5"></script>
+<script src="js/pages/products.js?v=5"></script>
+<script src="js/pages/users.js?v=5"></script>
+<script src="js/pages/settings.js?v=5"></script>
 <script>
 // Login function
 function loginAs(role) {
@@ -335,6 +349,66 @@ function logout() {
 document.addEventListener('DOMContentLoaded', () => {
     // Login screen is shown by default
 });
+
+// PWA: Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('SW registered:', reg.scope);
+        }).catch(err => console.log('SW registration failed:', err));
+    });
+}
+
+// PWA: Install Prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+});
+
+function showInstallBanner() {
+    // Only show if not already installed and not dismissed recently
+    if (localStorage.getItem('mdt_pwa_dismissed') && Date.now() - parseInt(localStorage.getItem('mdt_pwa_dismissed')) < 86400000) return;
+    const banner = document.createElement('div');
+    banner.id = 'pwaInstallBanner';
+    banner.className = 'pwa-install-banner';
+    banner.innerHTML = `
+        <div class="pwa-install-content">
+            <div style="display:flex;align-items:center;gap:10px;flex:1">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <span style="font-size:22px;font-weight:800;color:white">M</span>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:14px">ติดตั้ง MDT ERP</div>
+                    <div style="font-size:11px;color:var(--gray-500)">เพิ่มไว้หน้าจอหลักเพื่อใช้เหมือนแอพ</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:6px">
+                <button class="btn btn-sm btn-outline" onclick="dismissInstall()">ภายหลัง</button>
+                <button class="btn btn-sm btn-accent" onclick="installPWA()"><i class="fas fa-download"></i> ติดตั้ง</button>
+            </div>
+        </div>`;
+    document.body.appendChild(banner);
+    setTimeout(() => banner.classList.add('show'), 100);
+}
+
+function installPWA() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(choice => {
+            deferredPrompt = null;
+            const el = document.getElementById('pwaInstallBanner');
+            if (el) el.remove();
+        });
+    }
+}
+
+function dismissInstall() {
+    localStorage.setItem('mdt_pwa_dismissed', Date.now().toString());
+    const el = document.getElementById('pwaInstallBanner');
+    if (el) { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }
+}
 </script>
 </body>
 </html>

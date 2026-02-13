@@ -185,13 +185,17 @@ function loadPage(pageId) {
     }
     // Close mobile sidebar
     document.getElementById('sidebar').classList.remove('mobile-open');
+    const sOverlay = document.getElementById('sidebarOverlay');
+    if (sOverlay) sOverlay.style.display = 'none';
     // Scroll to top
     window.scrollTo(0, 0);
 }
 
 function toggleSidebar() {
     const sb = document.getElementById('sidebar');
-    sb.classList.toggle('mobile-open');
+    const overlay = document.getElementById('sidebarOverlay');
+    const isOpen = sb.classList.toggle('mobile-open');
+    if (overlay) overlay.style.display = isOpen ? 'block' : 'none';
 }
 
 function showNotifications() {
