@@ -903,6 +903,7 @@ function onProviderChange(newProvider) {
 }
 
 async function loadAISettingsFromServer() {
+    let serverHasKey = false;
     try {
         const resp = await fetch(AI_SETTINGS_API, {
             headers: { 'X-MDT-Full-Key': 'true' }
@@ -913,20 +914,38 @@ async function loadAISettingsFromServer() {
                 const d = result.data;
                 if (d.provider) aiProvider = d.provider;
                 if (d.model) aiModel = d.model;
-                if (d.keys && d.keys[aiProvider]) {
+                if (d.keys && d.keys[aiProvider] && d.keys[aiProvider].length > 5) {
                     aiApiKey = d.keys[aiProvider];
+                    serverHasKey = true;
                 }
                 // Also sync to localStorage as fallback
                 saveData('ai_provider', aiProvider);
                 if (aiApiKey) saveData('ai_api_key_' + aiProvider, aiApiKey);
                 saveData('ai_model', aiModel);
-                aiSettingsLoaded = true;
-                console.log('[AI] Settings loaded from server:', aiProvider, aiModel);
+                console.log('[AI] Settings loaded from server:', aiProvider, aiModel, serverHasKey ? '(key found)' : '(no key)');
             }
         }
     } catch (err) {
         console.log('[AI] Server settings unavailable, using localStorage fallback:', err.message);
     }
+
+    // AUTO-MIGRATE: If server has no key, but localStorage does → push to server
+    if (!serverHasKey) {
+        const localProvider = loadData('ai_provider', 'gemini');
+        const localKey = loadData('ai_api_key_' + localProvider, '') || loadData('ai_api_key_gemini', '') || loadData('ai_api_key_grok', '');
+        const localModel = loadData('ai_model', 'gemini-2.0-flash');
+        if (localKey) {
+            console.log('[AI] Auto-migrating settings from localStorage to server...');
+            aiProvider = localProvider;
+            aiApiKey = localKey;
+            aiModel = localModel;
+            // Push to server in background
+            saveAISettingsToServer(localProvider, localKey, localModel).then(ok => {
+                if (ok) console.log('[AI] Auto-migration successful!');
+            });
+        }
+    }
+
     aiSettingsLoaded = true;
 }
 
