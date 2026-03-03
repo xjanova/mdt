@@ -1,10 +1,10 @@
-/* AI Assistant Page - Multi-Provider: Google Gemini (Free) + Grok */
+/* AI Assistant Page - Multi-Provider: Google Gemini (Free) + Groq (Free) + Grok */
 /* Settings stored on server via PHP API + localStorage fallback */
 
 let aiChatHistory = [];
 let aiApiKey = '';
 let aiModel = 'gemini-2.0-flash';
-let aiProvider = 'gemini'; // 'gemini' or 'grok'
+let aiProvider = 'gemini'; // 'gemini', 'groq', or 'grok'
 let aiSettingsLoaded = false;
 
 // API base URL for settings
@@ -26,9 +26,24 @@ const AI_PROVIDERS = {
         keyLink: 'https://aistudio.google.com/apikey',
         keyLabel: 'Google AI Studio',
     },
+    groq: {
+        name: 'Groq',
+        icon: 'fa-bolt',
+        color: '#f55036',
+        models: [
+            { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (แนะนำ - ฟรี)', free: true },
+            { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant (เร็วสุด - ฟรี)', free: true },
+            { id: 'gemma2-9b-it', name: 'Gemma 2 9B (ฟรี)', free: true },
+            { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B (ฟรี)', free: true },
+        ],
+        getUrl: () => 'https://api.groq.com/openai/v1/chat/completions',
+        keyPlaceholder: 'gsk_xxxxxxxxxxxxxxxxxxxxxxxx',
+        keyLink: 'https://console.groq.com/keys',
+        keyLabel: 'Groq Console',
+    },
     grok: {
         name: 'Grok (xAI)',
-        icon: 'fa-bolt',
+        icon: 'fa-rocket',
         color: '#1da1f2',
         models: [
             { id: 'grok-3', name: 'Grok 3 (ต้องซื้อ Credits)', free: false },
@@ -55,13 +70,13 @@ async function renderAI(role) {
     if (!aiApiKey) {
         aiProvider = loadData('ai_provider', 'gemini');
         aiApiKey = loadData('ai_api_key_' + aiProvider, '');
-        aiModel = loadData('ai_model', aiProvider === 'gemini' ? 'gemini-2.0-flash' : 'grok-3');
+        aiModel = loadData('ai_model', aiProvider === 'gemini' ? 'gemini-2.0-flash' : aiProvider === 'groq' ? 'llama-3.3-70b-versatile' : 'grok-3');
     }
     aiChatHistory = loadData('ai_chat_history', []);
 
     const prov = AI_PROVIDERS[aiProvider];
     const providerLabel = prov.name;
-    const freeTag = aiProvider === 'gemini' ? '<span class="tag tag-success" style="font-size:10px;padding:1px 6px;margin-left:4px"><i class="fas fa-gift"></i> ฟรี</span>' : '';
+    const freeTag = (aiProvider === 'gemini' || aiProvider === 'groq') ? '<span class="tag tag-success" style="font-size:10px;padding:1px 6px;margin-left:4px"><i class="fas fa-gift"></i> ฟรี</span>' : '';
 
     c.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - 180px);min-height:500px">
@@ -270,7 +285,7 @@ function renderAIChatMessages() {
             <p style="color:var(--gray-400);font-size:13px;max-width:400px;margin:0 auto">
                 ผมช่วยวิเคราะห์ข้อมูลยอดขาย, สต๊อก, แนะนำกลยุทธ์การขาย
                 และตอบคำถามเกี่ยวกับสินค้าสยามพลาสวูดได้<br><br>
-                ${!aiApiKey ? '<span style="color:var(--warning)"><i class="fas fa-exclamation-triangle"></i> กรุณาตั้งค่า API Key ก่อนเริ่มใช้งาน</span><br><span style="font-size:12px;color:var(--success)"><i class="fas fa-gift"></i> แนะนำ Google Gemini (ฟรี!) กดไอคอนเกียร์ด้านบน</span>' : 'พิมพ์คำถามหรือเลือกคำถามด้านขวาได้เลยครับ'}
+                ${!aiApiKey ? '<span style="color:var(--warning)"><i class="fas fa-exclamation-triangle"></i> กรุณาตั้งค่า API Key ก่อนเริ่มใช้งาน</span><br><span style="font-size:12px;color:var(--success)"><i class="fas fa-gift"></i> แนะนำ Groq (ฟรี + เร็วมาก!) หรือ Google Gemini (ฟรี!) กดไอคอนเกียร์ด้านบน</span>' : 'พิมพ์คำถามหรือเลือกคำถามด้านขวาได้เลยครับ'}
             </p>
         </div>`;
     }
@@ -372,6 +387,8 @@ async function sendAIMessage() {
         let reply;
         if (aiProvider === 'gemini') {
             reply = await callGeminiAPI(message);
+        } else if (aiProvider === 'groq') {
+            reply = await callGroqAPI(message);
         } else {
             reply = await callGrokAPI(message);
         }
@@ -453,6 +470,40 @@ async function callGrokAPI(message) {
     ];
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${aiApiKey}`
+        },
+        body: JSON.stringify({
+            model: aiModel,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 2048,
+        })
+    });
+
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `API Error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || 'ไม่ได้รับการตอบกลับ';
+    return reply;
+}
+
+async function callGroqAPI(message) {
+    const systemPrompt = getSystemPrompt();
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...aiChatHistory.filter(m => m.role !== 'error').slice(-20).map(m => ({
+            role: m.role,
+            content: m.content
+        }))
+    ];
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -810,9 +861,17 @@ function showAISettings() {
                     </div>
                 </label>
                 <label style="flex:1;cursor:pointer">
+                    <input type="radio" name="aiProviderRadio" value="groq" ${aiProvider === 'groq' ? 'checked' : ''} onchange="onProviderChange(this.value)" style="display:none">
+                    <div id="provCard_groq" style="padding:12px;border:2px solid ${aiProvider === 'groq' ? '#f55036' : 'var(--gray-200)'};border-radius:10px;text-align:center;transition:all .2s;${aiProvider === 'groq' ? 'background:#fff5f3;' : ''}">
+                        <i class="fas fa-bolt" style="font-size:20px;color:#f55036;margin-bottom:4px"></i>
+                        <div style="font-weight:700;font-size:13px">Groq</div>
+                        <span class="tag tag-success" style="font-size:9px;padding:1px 6px;margin-top:4px"><i class="fas fa-gift"></i> ฟรี! เร็วมาก</span>
+                    </div>
+                </label>
+                <label style="flex:1;cursor:pointer">
                     <input type="radio" name="aiProviderRadio" value="grok" ${aiProvider === 'grok' ? 'checked' : ''} onchange="onProviderChange(this.value)" style="display:none">
                     <div id="provCard_grok" style="padding:12px;border:2px solid ${aiProvider === 'grok' ? '#1da1f2' : 'var(--gray-200)'};border-radius:10px;text-align:center;transition:all .2s;${aiProvider === 'grok' ? 'background:#e8f5fe;' : ''}">
-                        <i class="fas fa-bolt" style="font-size:20px;color:#1da1f2;margin-bottom:4px"></i>
+                        <i class="fas fa-rocket" style="font-size:20px;color:#1da1f2;margin-bottom:4px"></i>
                         <div style="font-weight:700;font-size:13px">Grok (xAI)</div>
                         <span class="tag tag-warning" style="font-size:9px;padding:1px 6px;margin-top:4px"><i class="fas fa-coins"></i> ต้องซื้อ Credits</span>
                     </div>
@@ -840,10 +899,13 @@ function showAISettings() {
         </div>
 
         <!-- Info Box -->
-        <div id="aiSettingsInfo" style="padding:12px;background:${aiProvider === 'gemini' ? '#eef4ff' : '#f0fdf4'};border-radius:8px;border-left:4px solid ${aiProvider === 'gemini' ? '#4285f4' : 'var(--success)'};margin-top:12px">
+        <div id="aiSettingsInfo" style="padding:12px;background:${aiProvider === 'gemini' ? '#eef4ff' : aiProvider === 'groq' ? '#fff5f3' : '#f0fdf4'};border-radius:8px;border-left:4px solid ${aiProvider === 'gemini' ? '#4285f4' : aiProvider === 'groq' ? '#f55036' : 'var(--success)'};margin-top:12px">
             ${aiProvider === 'gemini' ? `
                 <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-gift" style="color:#4285f4"></i> Google Gemini ฟรี!</p>
                 <p style="font-size:11px;color:var(--gray-600)">ใช้งานฟรี 15 request/นาที (1,500/วัน) เพียงพอสำหรับ Demo<br>สร้าง API Key ได้ที่ <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#4285f4">Google AI Studio</a></p>
+            ` : aiProvider === 'groq' ? `
+                <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-bolt" style="color:#f55036"></i> Groq ฟรี + เร็วมาก!</p>
+                <p style="font-size:11px;color:var(--gray-600)">ใช้งานฟรี! รองรับ Llama 3.3, Gemma 2, Mixtral ความเร็วสูง<br>สร้าง API Key ได้ที่ <a href="https://console.groq.com/keys" target="_blank" style="color:#f55036">Groq Console</a></p>
             ` : `
                 <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-shield-check"></i> ความปลอดภัย</p>
                 <p style="font-size:11px;color:var(--gray-600)">API Key จะถูกเก็บเฉพาะในเบราว์เซอร์ของคุณ (localStorage) ไม่มีการส่งไปเซิร์ฟเวอร์ใดๆ</p>
@@ -865,10 +927,18 @@ function showAISettings() {
 function onProviderChange(newProvider) {
     const prov = AI_PROVIDERS[newProvider];
     // Update card highlights
-    document.getElementById('provCard_gemini').style.borderColor = newProvider === 'gemini' ? '#4285f4' : 'var(--gray-200)';
-    document.getElementById('provCard_gemini').style.background = newProvider === 'gemini' ? '#eef4ff' : '';
-    document.getElementById('provCard_grok').style.borderColor = newProvider === 'grok' ? '#1da1f2' : 'var(--gray-200)';
-    document.getElementById('provCard_grok').style.background = newProvider === 'grok' ? '#e8f5fe' : '';
+    const cards = {
+        gemini: { color: '#4285f4', bg: '#eef4ff' },
+        groq: { color: '#f55036', bg: '#fff5f3' },
+        grok: { color: '#1da1f2', bg: '#e8f5fe' },
+    };
+    Object.keys(cards).forEach(key => {
+        const el = document.getElementById('provCard_' + key);
+        if (el) {
+            el.style.borderColor = newProvider === key ? cards[key].color : 'var(--gray-200)';
+            el.style.background = newProvider === key ? cards[key].bg : '';
+        }
+    });
 
     // Update key field
     document.getElementById('aiKeyLabel').textContent = prov.name + ' API Key *';
@@ -893,6 +963,12 @@ function onProviderChange(newProvider) {
         infoBox.innerHTML = `
             <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-gift" style="color:#4285f4"></i> Google Gemini ฟรี!</p>
             <p style="font-size:11px;color:var(--gray-600)">ใช้งานฟรี 15 request/นาที (1,500/วัน) เพียงพอสำหรับ Demo<br>สร้าง API Key ได้ที่ <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#4285f4">Google AI Studio</a></p>`;
+    } else if (newProvider === 'groq') {
+        infoBox.style.background = '#fff5f3';
+        infoBox.style.borderLeftColor = '#f55036';
+        infoBox.innerHTML = `
+            <p style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fas fa-bolt" style="color:#f55036"></i> Groq ฟรี + เร็วมาก!</p>
+            <p style="font-size:11px;color:var(--gray-600)">ใช้งานฟรี! รองรับ Llama 3.3, Gemma 2, Mixtral ความเร็วสูง<br>สร้าง API Key ได้ที่ <a href="https://console.groq.com/keys" target="_blank" style="color:#f55036">Groq Console</a></p>`;
     } else {
         infoBox.style.background = '#f0fdf4';
         infoBox.style.borderLeftColor = 'var(--success)';

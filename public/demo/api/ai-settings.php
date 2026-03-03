@@ -109,7 +109,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
         // Update fields
         if (isset($input['provider'])) {
-            $allowed = ['gemini', 'grok'];
+            $allowed = ['gemini', 'groq', 'grok'];
             if (in_array($input['provider'], $allowed)) {
                 $current['provider'] = $input['provider'];
             }

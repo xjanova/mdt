@@ -14,7 +14,7 @@ function renderSettings(role) {
                     <a class="settings-nav-item" onclick="showSettingsTab('branches',this)"><i class="fas fa-store"></i> สาขา</a>
                     <a class="settings-nav-item" onclick="showSettingsTab('notifications',this)"><i class="fas fa-bell"></i> การแจ้งเตือน</a>
                     <a class="settings-nav-item" onclick="showSettingsTab('import_settings',this)"><i class="fas fa-file-import"></i> การนำเข้าข้อมูล</a>
-                    <a class="settings-nav-item" onclick="showSettingsTab('ai_settings',this)"><i class="fas fa-robot"></i> AI / Grok</a>
+                    <a class="settings-nav-item" onclick="showSettingsTab('ai_settings',this)"><i class="fas fa-robot"></i> AI / Groq</a>
                     <a class="settings-nav-item" onclick="showSettingsTab('backup',this)"><i class="fas fa-database"></i> สำรองข้อมูล</a>
                     <a class="settings-nav-item" onclick="showSettingsTab('about',this)"><i class="fas fa-info-circle"></i> เกี่ยวกับระบบ</a>
                 </div>
@@ -335,25 +335,76 @@ function getSettingsImport(s) {
 }
 
 function getSettingsAI(s) {
-    const apiKey = loadData('grok_api_key', '');
-    const model = loadData('grok_model', 'grok-3');
+    const currentProvider = loadData('ai_provider', 'gemini');
+    const groqKey = loadData('ai_api_key_groq', '');
+    const geminiKey = loadData('ai_api_key_gemini', '');
+    const groqModel = loadData('ai_model_groq', 'llama-3.3-70b-versatile');
+    const geminiModel = loadData('ai_model_gemini', 'gemini-2.0-flash');
     return `
     <div class="card">
-        <div class="card-header"><h3><i class="fas fa-robot" style="color:var(--accent);margin-right:6px"></i> ตั้งค่า AI / Grok</h3></div>
+        <div class="card-header"><h3><i class="fas fa-robot" style="color:var(--accent);margin-right:6px"></i> ตั้งค่า AI</h3></div>
         <div class="card-body">
-            <div class="form-group">
-                <label class="form-label">Grok API Key</label>
-                <input type="password" class="form-control" value="${apiKey}" id="settingsGrokKey" placeholder="xai-xxxxxxxxxxxxxxxx">
-                <p style="font-size:11px;color:var(--gray-400);margin-top:4px">รับ API Key ที่ <a href="https://console.x.ai" target="_blank" style="color:var(--primary)">console.x.ai</a></p>
+            <div style="padding:12px;background:#fff5f3;border-radius:8px;border-left:4px solid #f55036;margin-bottom:16px">
+                <p style="font-size:12px"><i class="fas fa-bolt" style="color:#f55036"></i> <strong>แนะนำ Groq:</strong> ฟรี + เร็วมาก! รองรับ Llama 3.3 70B, Gemma 2, Mixtral</p>
             </div>
+
             <div class="form-group">
-                <label class="form-label">โมเดล AI</label>
-                <select class="form-control" id="settingsGrokModel">
-                    <option value="grok-3" ${model==='grok-3'?'selected':''}>Grok 3 (ฉลาดที่สุด)</option>
-                    <option value="grok-3-mini" ${model==='grok-3-mini'?'selected':''}>Grok 3 Mini (เร็ว ประหยัด)</option>
-                    <option value="grok-2" ${model==='grok-2'?'selected':''}>Grok 2</option>
+                <label class="form-label">Provider ที่ใช้งาน</label>
+                <select class="form-control" id="settingsAIProvider" onchange="onSettingsProviderChange()">
+                    <option value="groq" ${currentProvider==='groq'?'selected':''}>Groq (ฟรี + เร็วมาก)</option>
+                    <option value="gemini" ${currentProvider==='gemini'?'selected':''}>Google Gemini (ฟรี)</option>
+                    <option value="grok" ${currentProvider==='grok'?'selected':''}>Grok / xAI (ต้องซื้อ Credits)</option>
                 </select>
             </div>
+
+            <div id="settingsGroqSection" style="${currentProvider==='groq'?'':'display:none'}">
+                <div class="form-group">
+                    <label class="form-label">Groq API Key</label>
+                    <input type="password" class="form-control" value="${groqKey}" id="settingsGroqKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
+                    <p style="font-size:11px;color:var(--gray-400);margin-top:4px">รับ API Key ที่ <a href="https://console.groq.com/keys" target="_blank" style="color:#f55036">console.groq.com</a></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">โมเดล AI</label>
+                    <select class="form-control" id="settingsGroqModel">
+                        <option value="llama-3.3-70b-versatile" ${groqModel==='llama-3.3-70b-versatile'?'selected':''}>Llama 3.3 70B (แนะนำ - ฟรี)</option>
+                        <option value="llama-3.1-8b-instant" ${groqModel==='llama-3.1-8b-instant'?'selected':''}>Llama 3.1 8B Instant (เร็วสุด - ฟรี)</option>
+                        <option value="gemma2-9b-it" ${groqModel==='gemma2-9b-it'?'selected':''}>Gemma 2 9B (ฟรี)</option>
+                        <option value="mixtral-8x7b-32768" ${groqModel==='mixtral-8x7b-32768'?'selected':''}>Mixtral 8x7B (ฟรี)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="settingsGeminiSection" style="${currentProvider==='gemini'?'':'display:none'}">
+                <div class="form-group">
+                    <label class="form-label">Google Gemini API Key</label>
+                    <input type="password" class="form-control" value="${geminiKey}" id="settingsGeminiKey" placeholder="AIzaSy...">
+                    <p style="font-size:11px;color:var(--gray-400);margin-top:4px">รับ API Key ที่ <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary)">Google AI Studio</a></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">โมเดล AI</label>
+                    <select class="form-control" id="settingsGeminiModel">
+                        <option value="gemini-2.0-flash" ${geminiModel==='gemini-2.0-flash'?'selected':''}>Gemini 2.0 Flash (แนะนำ)</option>
+                        <option value="gemini-2.0-flash-lite" ${geminiModel==='gemini-2.0-flash-lite'?'selected':''}>Gemini 2.0 Flash Lite (เร็วสุด)</option>
+                        <option value="gemini-1.5-flash" ${geminiModel==='gemini-1.5-flash'?'selected':''}>Gemini 1.5 Flash</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="settingsGrokSection" style="${currentProvider==='grok'?'':'display:none'}">
+                <div class="form-group">
+                    <label class="form-label">Grok API Key</label>
+                    <input type="password" class="form-control" value="${loadData('ai_api_key_grok', '')}" id="settingsGrokKey" placeholder="xai-xxxxxxxxxxxxxxxx">
+                    <p style="font-size:11px;color:var(--gray-400);margin-top:4px">รับ API Key ที่ <a href="https://console.x.ai" target="_blank" style="color:var(--primary)">console.x.ai</a></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">โมเดล AI</label>
+                    <select class="form-control" id="settingsGrokModel">
+                        <option value="grok-3" ${loadData('ai_model_grok','grok-3')==='grok-3'?'selected':''}>Grok 3 (ฉลาดที่สุด)</option>
+                        <option value="grok-3-mini" ${loadData('ai_model_grok','grok-3')==='grok-3-mini'?'selected':''}>Grok 3 Mini (เร็ว)</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">บทบาท AI (System Prompt เพิ่มเติม)</label>
                 <textarea class="form-control" rows="3" placeholder="เช่น 'ตอบสั้นๆ กระชับ ใช้ภาษาทางการ'">ตอบเป็นภาษาไทย กระชับ ให้คำแนะนำที่ปฏิบัติได้จริง</textarea>
@@ -380,11 +431,11 @@ function getSettingsAI(s) {
             </div>
 
             <div style="margin-top:16px;padding:12px;background:#f0fdf4;border-radius:8px;border-left:4px solid var(--success)">
-                <p style="font-size:12px"><i class="fas fa-shield-check"></i> <strong>ความปลอดภัย:</strong> API Key เก็บเฉพาะในเบราว์เซอร์ ไม่ส่งไปเซิร์ฟเวอร์ การสนทนาส่งตรงไป Grok API เท่านั้น</p>
+                <p style="font-size:12px"><i class="fas fa-shield-check"></i> <strong>ความปลอดภัย:</strong> API Key เก็บบนเซิร์ฟเวอร์ + สำรองในเบราว์เซอร์ การสนทนาส่งตรงไป AI Provider เท่านั้น</p>
             </div>
         </div>
         <div class="card-footer" style="text-align:right">
-            <button class="btn btn-outline" onclick="testGrokConnection()" id="testGrokBtn"><i class="fas fa-plug"></i> ทดสอบการเชื่อมต่อ</button>
+            <button class="btn btn-outline" onclick="testAIConnectionFromSettings()" id="testAIBtn"><i class="fas fa-plug"></i> ทดสอบการเชื่อมต่อ</button>
             <button class="btn btn-primary" onclick="saveAISettingsFromSettings()"><i class="fas fa-check"></i> บันทึก</button>
         </div>
     </div>`;
@@ -444,7 +495,7 @@ function getSettingsAbout(s) {
             <table style="width:100%;font-size:13px;border-collapse:collapse">
                 <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px;color:var(--gray-500)">เวอร์ชัน</td><td style="padding:8px;font-weight:700">1.0.0-demo</td></tr>
                 <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px;color:var(--gray-500)">Framework</td><td style="padding:8px">Vanilla JS (Demo) / Laravel 12 (Production)</td></tr>
-                <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px;color:var(--gray-500)">AI Engine</td><td style="padding:8px">Grok 3 (xAI)</td></tr>
+                <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px;color:var(--gray-500)">AI Engine</td><td style="padding:8px">Groq / Gemini / Grok (Multi-Provider)</td></tr>
                 <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px;color:var(--gray-500)">สำหรับ</td><td style="padding:8px">บจก. สยามพลาสวูด</td></tr>
                 <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px;color:var(--gray-500)">พัฒนาโดย</td><td style="padding:8px">XMAN Studio</td></tr>
                 <tr><td style="padding:8px;color:var(--gray-500)">ลิขสิทธิ์</td><td style="padding:8px">&copy; 2026 XMAN Studio</td></tr>
@@ -483,28 +534,85 @@ function saveGPSSettings() {
     showToast('บันทึกการตั้งค่า GPS สำเร็จ');
 }
 
+function onSettingsProviderChange() {
+    const provider = document.getElementById('settingsAIProvider').value;
+    document.getElementById('settingsGroqSection').style.display = provider === 'groq' ? '' : 'none';
+    document.getElementById('settingsGeminiSection').style.display = provider === 'gemini' ? '' : 'none';
+    document.getElementById('settingsGrokSection').style.display = provider === 'grok' ? '' : 'none';
+}
+
 function saveAISettingsFromSettings() {
-    const key = document.getElementById('settingsGrokKey').value.trim();
-    const model = document.getElementById('settingsGrokModel').value;
-    if (key) saveData('grok_api_key', key);
-    saveData('grok_model', model);
+    const provider = document.getElementById('settingsAIProvider').value;
+    let key = '';
+    let model = '';
+
+    if (provider === 'groq') {
+        key = document.getElementById('settingsGroqKey').value.trim();
+        model = document.getElementById('settingsGroqModel').value;
+    } else if (provider === 'gemini') {
+        key = document.getElementById('settingsGeminiKey').value.trim();
+        model = document.getElementById('settingsGeminiModel').value;
+    } else {
+        key = document.getElementById('settingsGrokKey').value.trim();
+        model = document.getElementById('settingsGrokModel').value;
+    }
+
+    saveData('ai_provider', provider);
+    if (key) saveData('ai_api_key_' + provider, key);
+    saveData('ai_model', model);
+    saveData('ai_model_' + provider, model);
+
+    // Update global AI state if ai.js is loaded
+    if (typeof aiProvider !== 'undefined') {
+        aiProvider = provider;
+        if (key) aiApiKey = key;
+        aiModel = model;
+    }
+
+    // Save to server in background
+    if (typeof saveAISettingsToServer === 'function' && key) {
+        saveAISettingsToServer(provider, key, model);
+    }
+
     showToast('บันทึกการตั้งค่า AI สำเร็จ');
 }
 
-async function testGrokConnection() {
-    const key = document.getElementById('settingsGrokKey').value.trim();
+async function testAIConnectionFromSettings() {
+    const provider = document.getElementById('settingsAIProvider').value;
+    let key = '';
+    let testUrl = '';
+    let testBody = {};
+
+    if (provider === 'groq') {
+        key = document.getElementById('settingsGroqKey').value.trim();
+        testUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        testBody = { model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: 'ping' }], max_tokens: 10 };
+    } else if (provider === 'gemini') {
+        key = document.getElementById('settingsGeminiKey').value.trim();
+        const model = document.getElementById('settingsGeminiModel').value || 'gemini-2.0-flash';
+        testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+        testBody = { contents: [{ parts: [{ text: 'ping' }] }], generationConfig: { maxOutputTokens: 10 } };
+    } else {
+        key = document.getElementById('settingsGrokKey').value.trim();
+        testUrl = 'https://api.x.ai/v1/chat/completions';
+        testBody = { model: 'grok-3-mini', messages: [{ role: 'user', content: 'ping' }], max_tokens: 10 };
+    }
+
     if (!key) { showToast('กรุณาใส่ API Key'); return; }
-    const btn = document.getElementById('testGrokBtn');
+    const btn = document.getElementById('testAIBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังทดสอบ...';
     try {
-        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+        const headers = { 'Content-Type': 'application/json' };
+        if (provider !== 'gemini') headers['Authorization'] = `Bearer ${key}`;
+        const res = await fetch(testUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({ model: 'grok-3-mini', messages: [{ role: 'user', content: 'ping' }], max_tokens: 10 })
+            headers: headers,
+            body: JSON.stringify(testBody)
         });
         if (res.ok) {
-            showToast('เชื่อมต่อ Grok สำเร็จ!');
+            const provName = provider === 'groq' ? 'Groq' : provider === 'gemini' ? 'Gemini' : 'Grok';
+            showToast(`เชื่อมต่อ ${provName} สำเร็จ!`);
         } else {
             const err = await res.json().catch(() => ({}));
             showToast('ไม่สามารถเชื่อมต่อ: ' + (err.error?.message || res.status));
