@@ -260,6 +260,21 @@ table.data-table tr:hover td { background:var(--gray-50); }
 .btn-lg { padding:12px 24px; font-size:15px; }
 .btn-icon { width:32px; height:32px; padding:0; justify-content:center; border-radius:8px; }
 
+/* AI Navigation Buttons */
+.ai-nav-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; margin:4px 4px 4px 0;
+    border-radius:20px; font-family:inherit; font-size:12px; font-weight:600;
+    border:1.5px solid var(--primary); background:white; color:var(--primary);
+    cursor:pointer; transition:all .2s ease; white-space:nowrap;
+}
+.ai-nav-btn:hover {
+    background:var(--primary); color:white;
+    transform:translateY(-1px); box-shadow:0 2px 8px rgba(30,58,95,0.25);
+}
+.ai-nav-btn:active { transform:translateY(0); }
+.ai-nav-btn i { font-size:11px; }
+
 /* ===== FORMS ===== */
 .form-group { margin-bottom:16px; }
 .form-label { display:block; font-size:13px; font-weight:600; color:var(--gray-700); margin-bottom:4px; }

@@ -328,8 +328,43 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Page metadata for AI navigation buttons
+const AI_NAV_PAGES = {
+    dashboard:      { icon: 'fa-chart-pie',            label: 'แดชบอร์ด' },
+    attendance:     { icon: 'fa-clock',                label: 'ลงเวลางาน/OT' },
+    sales:          { icon: 'fa-chart-line',           label: 'รายงานการขาย' },
+    workflows:      { icon: 'fa-diagram-project',      label: 'โฟลงาน/มอบหมาย' },
+    problems:       { icon: 'fa-triangle-exclamation', label: 'ติดตามปัญหา' },
+    branches:       { icon: 'fa-store',                label: 'สาขา' },
+    communications: { icon: 'fa-comments',             label: 'ศูนย์สื่อสาร' },
+    hr:             { icon: 'fa-people-group',         label: 'HR / บุคลากร' },
+    products:       { icon: 'fa-box-open',             label: 'สินค้า/สต๊อก' },
+    import:         { icon: 'fa-file-import',          label: 'นำเข้าข้อมูล' },
+    users:          { icon: 'fa-users-gear',           label: 'จัดการผู้ใช้/สิทธิ์' },
+    settings:       { icon: 'fa-gear',                 label: 'ตั้งค่าระบบ' },
+};
+
+function getAccessiblePages(role) {
+    const menus = MENUS[role || currentRole] || [];
+    const pageIds = [];
+    menus.forEach(group => {
+        group.items.forEach(item => pageIds.push(item.id));
+    });
+    return pageIds;
+}
+
+function isPageAccessible(pageId) {
+    return getAccessiblePages(currentRole).includes(pageId);
+}
+
 function formatAIResponse(text) {
     let html = escapeHtml(text);
+    // Navigation buttons: [[NAV:pageId|Label]] — parsed after escapeHtml (brackets survive escaping)
+    html = html.replace(/\[\[NAV:(\w+)\|(.+?)\]\]/g, function(match, pageId, label) {
+        const pageMeta = AI_NAV_PAGES[pageId];
+        if (!pageMeta || !isPageAccessible(pageId)) return '';
+        return `<button class="ai-nav-btn" onclick="loadPage('${pageId}')"><i class="fas ${pageMeta.icon}"></i> ${label}</button>`;
+    });
     // Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     // Bullet points
@@ -814,6 +849,13 @@ function getSystemPrompt() {
     const roleInfo = ROLE_NAMES[role];
     const mdtData = formatMDTDataForAI(role);
 
+    // Build accessible pages list for navigation instruction
+    const navPagesInfo = getAccessiblePages(role)
+        .filter(id => id !== 'ai')
+        .map(id => { const m = AI_NAV_PAGES[id]; return m ? `  - ${id}: ${m.label}` : null; })
+        .filter(Boolean)
+        .join('\n');
+
     return `คุณเป็น AI ผู้ช่วยวิเคราะห์ข้อมูลของระบบ MDT (Modern Distribution Tool) ของบริษัท สยามพลาสวูด จำกัด
 
 == ขอบเขตการตอบ ==
@@ -834,6 +876,25 @@ function getSystemPrompt() {
 
 == ข้อมูลระบบ MDT (ข้อมูลจริง ณ ปัจจุบัน) ==
 ${mdtData}
+
+== ปุ่มนำทาง ==
+เมื่อตอบเกี่ยวกับข้อมูลที่ผู้ใช้สามารถดูรายละเอียดเพิ่มเติมในหน้าอื่นได้ ให้ใส่ปุ่มนำทางในรูปแบบ [[NAV:pageId|ข้อความปุ่ม]]
+หน้าที่ผู้ใช้เข้าถึงได้:
+${navPagesInfo}
+
+กฎการใช้ปุ่มนำทาง:
+- ใส่ปุ่มท้ายย่อหน้าหรือท้ายคำตอบ ไม่ใส่กลางประโยค
+- ใส่เฉพาะหน้าที่เกี่ยวข้องกับเนื้อหาที่ตอบ ไม่ใส่ทุกหน้า
+- ใส่ไม่เกิน 3 ปุ่มต่อคำตอบ
+- ข้อความปุ่มให้สั้นกระชับ เช่น "ดูรายงานการขาย" "ไปหน้าสต๊อก" "ดูปัญหาทั้งหมด"
+- ใช้เฉพาะ pageId ที่ระบุข้างบน ห้ามสร้าง pageId ขึ้นมาเอง
+
+ตัวอย่าง:
+ถ้าพูดถึงยอดขาย → [[NAV:sales|ดูรายงานการขาย]]
+ถ้าพูดถึงสต๊อก/สินค้า → [[NAV:products|ดูสินค้า/สต๊อก]]
+ถ้าพูดถึงปัญหา → [[NAV:problems|ดูปัญหาทั้งหมด]]
+ถ้าพูดถึงพนักงาน/ลา → [[NAV:hr|ไปหน้า HR]]
+ถ้าพูดถึงสาขา → [[NAV:branches|ดูข้อมูลสาขา]]
 
 == แนวทางตอบ ==
 - ตอบเป็นภาษาไทย กระชับ ตรงประเด็น
